@@ -4,5 +4,7 @@
   "arrowParens": "always",
   "printWidth": 100,
   "tabWidth": 2,
-  "jsxSingleQuote": true
+  "jsxSingleQuote": true,
+  "bracketSpacing": true,
+  "trailingComma": "all"
 }

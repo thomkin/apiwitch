@@ -2,7 +2,7 @@
   "name": "routyfast",
   "version": "1.0.0",
   "description": "A small tool that can create routes for typescript web frameworks automatically and fast so routyfast ",
-  "main": "index.js",
+  "main": "src/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsc --watch --project tsconfig.json"
@@ -15,7 +15,15 @@
     "typescript": "^5.6.3"
   },
   "devDependencies": {
-    "@types/node": "^22.8.7",
+    "@elysiajs/cors": "^1.1.1",
+    "@elysiajs/swagger": "^1.1.5",
+    "@types/node": "^22.9.0",
+    "elysia": "^1.1.24",
     "ts-morph": "^24.0.0"
+  },
+  "peerDependencies": {
+    "@elysiajs/cors": "^1.1.1",
+    "@elysiajs/swagger": "^1.1.5",
+    "elysia": "^1.1.24"
   }
 }

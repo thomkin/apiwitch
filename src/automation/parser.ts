@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { routifyConfig } from '.';
+import { routifyConfig } from '..';
 import {
   Project,
   SourceFile,
@@ -12,7 +12,7 @@ import {
 
 import * as util from 'util';
 
-import { IterReturn } from './types';
+import { IterReturn } from '../types';
 
 /**
  * Finds all TypeScript files in the specified directories.
@@ -78,7 +78,7 @@ const iterateOverProps = (
   propList: Symbol[],
   typeDeclaration: TypeAliasDeclaration | InterfaceDeclaration,
   topName: string,
-  typeChecker: TypeChecker
+  typeChecker: TypeChecker,
 ): IterReturn | null => {
   const paramList: any[] = [];
 
@@ -127,7 +127,7 @@ const iterateOverProps = (
  */
 const processTypeOrInterface = (
   typeDeclaration: TypeAliasDeclaration | InterfaceDeclaration | undefined,
-  typeChecker: TypeChecker
+  typeChecker: TypeChecker,
 ): IterReturn | undefined | null => {
   if (!typeDeclaration) {
     return;
@@ -237,7 +237,7 @@ const tscFindHandlerInstances = (src: SourceFile): void => {
 
     if (identifier.getText() === routifyConfig.apiAddRouterFunc) {
       console.log(
-        `'${routifyConfig.apiAddRouterFunc}' is called at line ${callExpr.getStartLineNumber()}`
+        `'${routifyConfig.apiAddRouterFunc}' is called at line ${callExpr.getStartLineNumber()}`,
       );
     }
   }
