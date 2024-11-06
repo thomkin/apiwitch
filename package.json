@@ -1,0 +1,21 @@
+{
+  "name": "routyfast",
+  "version": "1.0.0",
+  "description": "A small tool that can create routes for typescript web frameworks automatically and fast so routyfast ",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "tsc --watch --project tsconfig.json"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "fs-extra": "^11.2.0",
+    "typescript": "^5.6.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.8.7",
+    "ts-morph": "^24.0.0"
+  }
+}
