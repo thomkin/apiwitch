@@ -61,3 +61,32 @@ export interface MethodHandler {
   headerSelect?: string[];
   callback: (request: any) => Promise<any>;
 }
+
+export interface AutoGenMethodData {
+  method: HttpMethods;
+  path: string;
+  auth?: boolean | string;
+  querySelect?: string[];
+  bodySelect?: string[];
+  paramSelect?: string[];
+  headerSelect?: string[];
+}
+
+/**
+ * Note: this interface is used to find the exported API objects.
+ * Please do not change the name, or if changed it must be changed in
+ * the cli code also
+ */
+export interface ApiWitchRoute {
+  method: string;
+  path: string;
+  auth?: boolean;
+  callback: (request: any) => Promise<any>;
+}
+
+export type SourceList = {
+  params: string[];
+  query: string[];
+  body: string[];
+  header: string[];
+};

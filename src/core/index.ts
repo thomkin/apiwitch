@@ -36,6 +36,16 @@ export const routyfastInit = (config: RoutyfastConfig) => {
         headerSelect: ['id'],
       })();
 
+      elysiaCtx.addRoute({
+        method: HttpMethods.get,
+        path: '/testing',
+        callback: testCallback,
+        querySelect: ['id', 'zwerg', 'phone'],
+        paramSelect: ['email'],
+        headerSelect: ['id'],
+        bodySelect: ['key', 'elefanot'],
+      })();
+
       break;
 
     default:

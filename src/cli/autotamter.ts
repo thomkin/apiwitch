@@ -1,6 +1,6 @@
 import { Project, ScriptTarget } from 'ts-morph';
 import { RoutifyConfig } from './types';
-import { getTypeScriptFiles, parseFile } from './parser';
+import { getTypeScriptFiles, startTransform } from './parser';
 import fs from 'fs';
 export let routifyConfig: RoutifyConfig = {} as RoutifyConfig;
 
@@ -17,7 +17,7 @@ export const init = async () => {
 
   const tsFIles = getTypeScriptFiles();
   console.log('GetTypescriptFiles', tsFIles);
-  parseFile('./example/index.ts');
+  startTransform('./example/index.ts');
 };
 
 init().catch((err) => console.log(err));
