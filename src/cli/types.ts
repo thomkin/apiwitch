@@ -10,6 +10,7 @@ export type SourceList = {
   query: string[];
   body: string[];
   header: string[];
+  bestEffort: string[];
 };
 
 export type ApiWitchRouteMeta = {

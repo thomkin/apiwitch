@@ -1,3 +1,11 @@
+import { ApiWitchRouteExport, ApiWitchRouteMeta, IterReturn } from './types';
+import { commentParser, mergeInputSelect } from './utils';
+import { logger, ErrorCode } from './logger';
+import { AutoGenMethodData } from '../types';
+import { cliConfig } from './index';
+import { cwd } from 'process';
+import path from 'path';
+
 import {
   Project,
   SourceFile,
@@ -9,19 +17,6 @@ import {
   VariableDeclaration,
 } from 'ts-morph';
 
-import { ApiWitchRouteExport, ApiWitchRouteMeta, IterReturn } from './types';
-import { AutoGenMethodData } from '../types';
-import { cliConfig, logger } from './index';
-import { cwd } from 'process';
-import * as util from 'util';
-import path from 'path';
-import { commentParser, mergeInputSelect } from './utils';
-
-/**
- * Finds all TypeScript files in the specified directories.
- *
- * @returns {string[]} The list of found TypeScript files.
- */
 const extractInlineCommentByPropName = (
   typeString: string,
   propName: string,
@@ -43,15 +38,6 @@ const extractInlineCommentByPropName = (
   return;
 };
 
-/**
- * Recursively iterates over properties of a given type declaration.
- *
- * @param {Symbol[]} propList - The list of properties to iterate over.
- * @param {TypeAliasDeclaration | InterfaceDeclaration} typeDeclaration - The type declaration that contains the propList.
- * @param {string} topName - The name of the top level parameter.
- * @param {TypeChecker} typeChecker - The type checker.
- * @returns {IterReturn | null} - The merged parameters.
- */
 const iterateOverProps = (
   propList: Symbol[],
   typeDeclaration: TypeAliasDeclaration | InterfaceDeclaration,
@@ -99,18 +85,6 @@ const iterateOverProps = (
   return merged;
 };
 
-/**
- * Recursively processes a type or interface declaration and returns a merged parameter
- * object. THe object represents the schema of the type.
- *
- * Note: Union types and intersected types  are not supported at the moment !
- *
- * @param {TypeAliasDeclaration | InterfaceDeclaration} typeDeclaration - The type
- *     declaration to process.
- * @param {TypeChecker} typeChecker - The type checker for the project.
- * @returns {IterReturn | undefined | null} - A merged parameter object or undefined
- *     if the input type declaration is undefined.
- */
 const processTypeOrInterface = (
   typeDeclaration: TypeAliasDeclaration | InterfaceDeclaration | undefined,
   typeChecker: TypeChecker,
@@ -228,8 +202,8 @@ export const startTransform = (file: string): AutoGenMethodData | undefined => {
    */
   const apiWitchRouteExport = findApiWitchExportedRoutes(src);
   if (!apiWitchRouteExport) {
-    logger.debug(`no api export found. Throw the file into the fire. `);
-    return; //no api export found so we can stop processing this source file
+    logger.debug(`no api export found. Ignore ${src.getFilePath()} `);
+    return;
   }
 
   /**
@@ -253,19 +227,19 @@ export const startTransform = (file: string): AutoGenMethodData | undefined => {
 
   if (!typeRequest && !interfaceRequest) {
     logger.error(
-      `Request [interface | type] not defined cannot load api for ${file} \n\tPlease add type Request = {} to the route`,
+      ErrorCode.RequestTypeNotDefined,
+      `Request [interface | type] not defined for ${file} \n\tPlease define teh Request type in the route`,
     );
     return;
   }
 
   if (!typeResponse && !interfaceResponse) {
     logger.error(
-      `Response [interface | type] not defined cannot load api for ${file}.\n\tPlease add type Response = {} to the route`,
+      ErrorCode.ResponseTypeNotDefined,
+      `Response [interface | type] not defined for ${file} \n\tPlease define teh Response type in the route`,
     );
     return;
   }
-
-  logger.debug(`found ApiWitchRoute export and all types are defined. Lets start cooking`);
 
   /**
    * Now the witch is clear that it really is an exported route. Out of the routes
@@ -274,15 +248,19 @@ export const startTransform = (file: string): AutoGenMethodData | undefined => {
    */
   const rawSchemaRequest = processTypeOrInterface(interfaceRequest || typeRequest, typeChecker);
   if (!rawSchemaRequest) {
-    logger.error(`Could not process Request [type | interface] in route ${src.getSourceFile()}`);
+    logger.error(
+      ErrorCode.RequestRawSchemaFailed,
+      `Could not process Request [type | interface] in route ${src.getSourceFile()}`,
+    );
     return;
   }
 
-  logger.debug(`Got Raw Schema for Request`);
-
   const rawSchemaResponse = processTypeOrInterface(interfaceResponse || typeResponse, typeChecker);
   if (!rawSchemaResponse) {
-    logger.error(`Could not process Response [type | interface] in route ${src.getSourceFile()}`);
+    logger.error(
+      ErrorCode.ResponseRawSchemaFailed,
+      `Could not process Response [type | interface] in route ${src.getSourceFile()}`,
+    );
     return;
   }
 
@@ -293,7 +271,6 @@ export const startTransform = (file: string): AutoGenMethodData | undefined => {
    * we pass it back and let the top module handle the conversion. Parsing
    * is done ! Yeah! Hex Hex!
    */
-  // apiWitchRouteExport.meta.
   return {
     importPath: apiWitchRouteExport.srcPath,
     callback: apiWitchRouteExport.meta.variableName,
@@ -303,11 +280,10 @@ export const startTransform = (file: string): AutoGenMethodData | undefined => {
     headerSelect: inputSelect.header,
     paramSelect: inputSelect.params,
     querySelect: inputSelect.query,
+    bestEffortSelect: inputSelect.bestEffort,
     auth: apiWitchRouteExport.meta.auth,
   } as AutoGenMethodData;
 };
-
-//TODO: still needed
 
 /**
  * Checks if the given string is a TypeScript native type.

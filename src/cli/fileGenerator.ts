@@ -1,11 +1,11 @@
-import { ImportSpecifier, NamedImports, Project } from 'ts-morph';
-import { AutoGenMethodData, MethodHandler } from '../types';
-import { cliConfig, logger } from '.';
-import * as ts from 'typescript';
-import path from 'path';
-import fs from 'fs';
+import { AutoGenMethodData } from '../types';
+import { logger } from './logger';
+import { cliConfig } from '.';
+
 import Mustache from 'mustache';
 import prettier from 'prettier';
+import path from 'path';
+import fs from 'fs';
 
 type MethodHandlerMustache = {
   path: string;
@@ -16,6 +16,7 @@ type MethodHandlerMustache = {
   paramSelect: string;
   headerSelect: string;
   bodySelect: string;
+  bestEffortSelect: string;
 };
 
 type ImportMustache = {
@@ -52,19 +53,14 @@ export class RouteFileGenerator {
     ).trim();
   };
 
-  // private createImport = () => {
-  //   ts.crea;
-  // };
-
   addAutoGenMethodData = (data: AutoGenMethodData | undefined | null) => {
     if (!data) {
       logger.warn(`input data not defined when calling addAutoGenMethodData`);
       return;
     }
 
+    //construct a uniqe id for the naming the created method handler
     const uuid = this.getUUID(data.importPath, data.callback);
-
-    console.log('555555555555555 ', data.importPath, uuid);
 
     //Create the process handler object
     const methodHandlerTemp = this.readMustacheTemplate(this.tempMethodHandler);
@@ -74,7 +70,8 @@ export class RouteFileGenerator {
     methodHandlerData.querySelect = JSON.stringify(data.querySelect || []);
     methodHandlerData.paramSelect = JSON.stringify(data.paramSelect || []);
     methodHandlerData.headerSelect = JSON.stringify(data.headerSelect || []);
-    methodHandlerData.callback = uuid;
+    methodHandlerData.bestEffortSelect = JSON.stringify(data.bestEffortSelect || []);
+    methodHandlerData.callback = uuid + '.callback';
     methodHandlerData.method = JSON.stringify(data.method);
     methodHandlerData.path = JSON.stringify(data.path);
     methodHandlerData.auth = data?.auth ? 'true' : 'false';
@@ -89,18 +86,10 @@ export class RouteFileGenerator {
     importData.includeDir = JSON.stringify(importWithoutExt.replace(cliConfig.includeDir, '..'));
     importData.uuid = uuid;
 
-    console.log('impor data', importData.includeDir, data.importPath);
-
     this.importLines.push(Mustache.render(importTemp, importData));
-
-    // this.importLines.push(
-    //   `import { ${data.callback}  as ${uuid} } from "${}"`,
-    // );
   };
 
-  generate = async (outPath: string) => {
-    logger.debug(`fileGenerator::create witchcraft file....`);
-
+  generate = async () => {
     const importList = this.importLines.join('\n');
     const handlers = this.methods.join('\n,');
 
@@ -122,7 +111,5 @@ export class RouteFileGenerator {
 
     const outFilePath = path.join(outDir, 'index.ts');
     fs.writeFileSync(outFilePath, formattedTemplate, { flag: 'w' });
-
-    logger.info('✨🧙‍♀️ Hooray! The witch has successfully completed her latest magic spells! 🌟🔮');
   };
 }

@@ -40,7 +40,7 @@ export type FrameworkContext = {
 export enum HttpMethods {
   get = 'get',
   delete = 'delete',
-  patch = 'path',
+  patch = 'patch',
   post = 'post',
 }
 
@@ -60,6 +60,7 @@ export interface MethodHandler {
   bodySelect?: string[];
   paramSelect?: string[];
   headerSelect?: string[];
+  bestEffortSelect?: string[];
   callback: (request: any) => Promise<any>;
 }
 
@@ -73,6 +74,7 @@ export interface AutoGenMethodData {
   bodySelect?: string[];
   paramSelect?: string[];
   headerSelect?: string[];
+  bestEffortSelect?: string[];
 }
 
 /**

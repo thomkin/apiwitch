@@ -54,11 +54,12 @@ export const mergeInputSelect = (rawSchema: IterReturn) => {
           params: [...acc.params, ...curr.params],
           header: [...acc.header, ...curr.header],
           query: [...acc.query, ...curr.query],
+          bestEffort: [...acc.bestEffort, ...curr.bestEffort],
         };
       }
       return acc;
     },
-    { body: [], params: [], header: [], query: [] },
+    { body: [], params: [], header: [], query: [], bestEffort: [] },
   );
 
   return mergedObject;
@@ -76,6 +77,17 @@ const parseInputWithoutParams = (comment: string, input: CommentInputSelect) => 
 };
 
 export const commentParser = (comment: string, paramName: string): SourceList | undefined => {
+  if (comment.length < 4) {
+    const sl: SourceList = {
+      body: [],
+      params: [],
+      header: [],
+      query: [],
+      bestEffort: [paramName],
+    };
+    return sl;
+  }
+
   const params = parseInputWithoutParams(comment, CommentInputSelect.params);
   if (params.length > 0) {
     const sl: SourceList = {
@@ -83,6 +95,7 @@ export const commentParser = (comment: string, paramName: string): SourceList | 
       params: [paramName],
       header: [],
       query: [],
+      bestEffort: [],
     };
     return sl;
   }
@@ -94,6 +107,7 @@ export const commentParser = (comment: string, paramName: string): SourceList | 
       params: [],
       header: [],
       query: [paramName],
+      bestEffort: [],
     };
     return sl;
   }
@@ -105,6 +119,7 @@ export const commentParser = (comment: string, paramName: string): SourceList | 
       params: [],
       header: [],
       query: [],
+      bestEffort: [],
     };
     return sl;
   }
@@ -117,6 +132,7 @@ export const commentParser = (comment: string, paramName: string): SourceList | 
       params: [],
       header: [paramName + ' ' + header],
       query: [],
+      bestEffort: [],
     };
     return sl;
   }

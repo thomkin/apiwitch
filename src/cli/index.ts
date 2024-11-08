@@ -1,69 +1,61 @@
-import fs from 'fs-extra';
 import { catchError, getTypeScriptFiles } from './utils';
-import { CliConfig } from './types';
-import { startTransform } from './parser';
-
-import winston from 'winston';
 import { RouteFileGenerator } from './fileGenerator';
-const { combine, timestamp, label, prettyPrint, colorize, simple } = winston.format;
+import { ErrorCode, logger } from './logger';
+import { startTransform } from './parser';
+import { CliConfig } from './types';
+
+import fs from 'fs-extra';
 
 export let cliConfig: CliConfig = { includeDir: '' };
-
-export const logger = winston.createLogger({
-  level: 'info',
-  format: combine(prettyPrint(), colorize(), simple()),
-  transports: [new winston.transports.Console({ level: 'debug' })],
-});
 
 export const run = async () => {
   logger.info('-------------------------------------------------------------------');
   logger.info('Extract the api calls - hold on tight the ride on the broom starts ');
   logger.info('-------------------------------------------------------------------');
 
+  logger.info('read configuration...');
   const [cfgFileErr, configContent] = await catchError(
     fs.readFile('./apiwitch.config.json', 'utf8'),
   );
 
-  logger.debug(`configuration --> ${configContent}`);
-
   if (cfgFileErr) {
-    // logger.error('Not able to find apiwitch.config.json ...');
-    throw new Error('could not find config file');
+    logger.error(ErrorCode.ConfigNotFound, `Not able to find apiwitch.config.json`);
+    return;
   }
 
   try {
     cliConfig = JSON.parse(configContent);
 
+    logger.info('configuration found  and setup, lets go...');
+
     if (!cliConfig.includeDir || cliConfig.includeDir.length === 0) {
-      logger.error('includes is not set in the configuration file');
-      throw new Error('includes is not set in the configuration file');
+      logger.error(
+        ErrorCode.ConfigIncludeDirMissing,
+        'includes is not set in the configuration file',
+      );
+      return;
     }
 
     //This setting should always be set by the witch not the user because she knows better
     cliConfig.routeAddFctName = 'ApiWitchRoute';
 
+    logger.info('find all typescript files...');
     const tsFiles = getTypeScriptFiles(cliConfig.includeDir);
-    logger.debug('Found the following ts files to analyze for routes', tsFiles);
-
     const rfg = new RouteFileGenerator();
 
     tsFiles.forEach((tsFile) => {
-      logger.debug(`ProcessFIle::${tsFile}`);
+      logger.info(`Parse file ::${tsFile}`);
       const methodData = startTransform(tsFile);
-      logger.debug(
-        `We prepared everything to start the creation of the auto generated files ${JSON.stringify(
-          methodData,
-          null,
-          2,
-        )}`,
-      );
-
-      rfg.addAutoGenMethodData(methodData);
+      if (methodData) {
+        rfg.addAutoGenMethodData(methodData);
+      }
     });
 
-    rfg.generate('');
+    logger.info('start generating output files...');
+    rfg.generate();
+    logger.info('✨🧙‍♀️ Hooray! The witch has successfully completed her latest magic spells! 🌟🔮');
   } catch (error) {
-    logger.error(error);
+    console.log(error);
   }
 };
 
