@@ -18,9 +18,10 @@ export interface FrameworkConfig {
   swagger?: Swagger;
 }
 
-export interface RoutyfastConfig {
+export interface ApiwitchConfig {
   framework: Framework;
   frameworkConfig: FrameworkConfig;
+  witchcraftRoutes: MethodHandler[];
 }
 
 // export interface RoutifyRouterCfg {
@@ -32,8 +33,8 @@ export interface RoutyfastConfig {
 // }
 
 export type FrameworkContext = {
-  init: (config: RoutyfastConfig) => void; //This MUST! be a synchronous function
-  addRoute: (handler: MethodHandler) => () => void; //FUnction must return a nother function that when called will only trigger the adding
+  init: (config: ApiwitchConfig) => void; //This MUST! be a synchronous function
+  addRoute: (handler: MethodHandler) => () => void | MethodHandler; //FUnction must return a nother function that when called will only trigger the adding
 };
 
 export enum HttpMethods {
@@ -63,7 +64,9 @@ export interface MethodHandler {
 }
 
 export interface AutoGenMethodData {
+  importPath: string;
   method: HttpMethods;
+  callback: string;
   path: string;
   auth?: boolean | string;
   querySelect?: string[];
@@ -83,10 +86,3 @@ export interface ApiWitchRoute {
   auth?: boolean;
   callback: (request: any) => Promise<any>;
 }
-
-export type SourceList = {
-  params: string[];
-  query: string[];
-  body: string[];
-  header: string[];
-};

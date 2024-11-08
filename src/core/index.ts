@@ -1,11 +1,20 @@
-import { Framework, HttpMethods, MethodHandler, RoutyfastConfig } from './types';
+import { Framework, HttpMethods, MethodHandler, ApiwitchConfig } from './types';
 import { ctx as elysiaCtx } from '../frameworks/elysia';
+import winston from 'winston';
+
+const { combine, timestamp, label, prettyPrint, colorize, simple } = winston.format;
+
+export const logger = winston.createLogger({
+  level: 'info',
+  format: combine(prettyPrint(), colorize(), simple()),
+  transports: [new winston.transports.Console({ level: 'debug' })],
+});
 
 export let routyfastRoute = (handler: MethodHandler): void => {
   console.error('default route handler not setup');
 };
 
-export const routyfastInit = (config: RoutyfastConfig) => {
+export const apiwitchInit = (config: ApiwitchConfig) => {
   switch (config.framework) {
     case Framework.elysia:
       console.log('routyfast::debug::selectedFramework', Framework.elysia);
@@ -27,24 +36,20 @@ export const routyfastInit = (config: RoutyfastConfig) => {
         return { code: 123, message: 'very nice' };
       };
 
-      elysiaCtx.addRoute({
-        method: HttpMethods.get,
-        path: '/thomas/test/:email',
-        callback: testCallback,
-        querySelect: ['id', 'zwerg', 'phone'],
-        paramSelect: ['email'],
-        headerSelect: ['id'],
-      })();
+      config.witchcraftRoutes.forEach((route) => {
+        logger.debug(`Adding route for --> ${route.method}::${route.path}`);
+        elysiaCtx.addRoute(route)();
+      });
 
-      elysiaCtx.addRoute({
-        method: HttpMethods.get,
-        path: '/testing',
-        callback: testCallback,
-        querySelect: ['id', 'zwerg', 'phone'],
-        paramSelect: ['email'],
-        headerSelect: ['id'],
-        bodySelect: ['key', 'elefanot'],
-      })();
+      // console.log('add route called');
+      // elysiaCtx.addRoute({
+      //   method: HttpMethods.get,
+      //   path: '/thomas/test/:email',
+      //   callback: testCallback,
+      //   querySelect: ['id', 'zwerg', 'phone'],
+      //   paramSelect: ['email'],
+      //   headerSelect: ['id'],
+      // })();
 
       break;
 

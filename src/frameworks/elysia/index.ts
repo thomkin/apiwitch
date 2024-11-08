@@ -27,7 +27,8 @@ const init = (config: RoutyfastConfig) => {
 };
 
 const addRoute = (handler: MethodHandler) => {
-  return () => {
+  console.log('add route called in framwerok');
+  return (): MethodHandler => {
     switch (handler.method) {
       case HttpMethods.get:
         _app.get(handler.path, (context) => {
@@ -67,6 +68,7 @@ const addRoute = (handler: MethodHandler) => {
       default:
         break;
     }
+    return handler;
   };
 };
 

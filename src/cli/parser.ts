@@ -1,7 +1,6 @@
 import {
   Project,
   SourceFile,
-  ts,
   Symbol,
   TypeAliasDeclaration,
   TypeChecker,
@@ -10,13 +9,13 @@ import {
   VariableDeclaration,
 } from 'ts-morph';
 
-import * as util from 'util';
 import { ApiWitchRouteExport, ApiWitchRouteMeta, IterReturn } from './types';
+import { AutoGenMethodData } from '../types';
 import { cliConfig, logger } from './index';
-import { commentParser, convertString, mergeInputSelect } from '../core/utils';
-import path from 'path';
 import { cwd } from 'process';
-import { AutoGenMethodData, MethodHandler } from '../types';
+import * as util from 'util';
+import path from 'path';
+import { commentParser, mergeInputSelect } from './utils';
 
 /**
  * Finds all TypeScript files in the specified directories.
@@ -67,8 +66,6 @@ const iterateOverProps = (
     const propType = typeChecker.getTypeOfSymbolAtLocation(prop, typeDeclaration);
     const isNative = isNativeType(propType.getText());
 
-    logger.debug(`ìsNativeType ${propType.getText()}`);
-
     if (!isNative) {
       const _propType = propType.getProperties();
       const ret = iterateOverProps(_propType, typeDeclaration, propName, typeChecker);
@@ -78,9 +75,7 @@ const iterateOverProps = (
     }
 
     const value = {} as any;
-
     const comment = extractInlineCommentByPropName(typeDeclaration.getText(), propName);
-
     const inputSelect = commentParser(comment || '', propName);
 
     value[propName] = { type: propType.getText(), comment, inputSelect };
@@ -204,7 +199,7 @@ const findApiWitchExportedRoutes = (src: SourceFile): ApiWitchRouteExport | unde
 
   if (hasExportedWitchRoute) {
     return {
-      srcPath: path.relative(cwd(), src.getFilePath()),
+      srcPath: './' + path.relative(cwd(), src.getFilePath()),
       meta,
     } as ApiWitchRouteExport;
   }
@@ -212,7 +207,7 @@ const findApiWitchExportedRoutes = (src: SourceFile): ApiWitchRouteExport | unde
   return;
 };
 
-export const startTransform = (file: string): unknown => {
+export const startTransform = (file: string): AutoGenMethodData | undefined => {
   const project = new Project();
 
   const src = project.addSourceFileAtPath(file);
@@ -283,9 +278,7 @@ export const startTransform = (file: string): unknown => {
     return;
   }
 
-  logger.debug(
-    `Got Raw Schema for Request ${util.format(JSON.stringify(rawSchemaRequest, null, 2))}`,
-  );
+  logger.debug(`Got Raw Schema for Request`);
 
   const rawSchemaResponse = processTypeOrInterface(interfaceResponse || typeResponse, typeChecker);
   if (!rawSchemaResponse) {
@@ -295,23 +288,15 @@ export const startTransform = (file: string): unknown => {
 
   const inputSelect = mergeInputSelect(rawSchemaRequest);
 
-  logger.debug(`Got Raw Schema for Response ${util.format(JSON.stringify(rawSchemaResponse))}`);
-  logger.debug(`Merged Input Select to configure API ${JSON.stringify(inputSelect, null, 2)}`);
-  logger.debug(
-    `found ApiWitchRoute export. check if types are defined... ${JSON.stringify(
-      apiWitchRouteExport,
-      null,
-      2,
-    )}`,
-  );
-
   /**
    * Now let us put everything together, create of type MethodHandler
    * we pass it back and let the top module handle the conversion. Parsing
    * is done ! Yeah! Hex Hex!
    */
-
+  // apiWitchRouteExport.meta.
   return {
+    importPath: apiWitchRouteExport.srcPath,
+    callback: apiWitchRouteExport.meta.variableName,
     path: apiWitchRouteExport.meta.path,
     method: apiWitchRouteExport.meta.method,
     bodySelect: inputSelect.body,
@@ -320,187 +305,9 @@ export const startTransform = (file: string): unknown => {
     querySelect: inputSelect.query,
     auth: apiWitchRouteExport.meta.auth,
   } as AutoGenMethodData;
-
-  //Once we have the source file check if it imports the add route handler
-  const isApiImport = tscCheckIfContainsAddRouterImport(src);
-
-  if (!isApiImport) {
-    //not a file that use the add router handler so we can skip it
-    return;
-  }
-
-  //
-  //tscFindHandlerInstances(src);
-
-  // const exportedHandler = tscGetExportedHandlerFunctions(src);
-
-  //now we have the name of the exported functions
-  //but types we do not really have... we need to ix the call signature of
-  //the api function  (route: string, request<T>)
-  tscFindAndPrintTypeDefinitions(src);
-  // console.log('STats', exportedHandler, isApiImport);
-
-  // exportedHandler?.forEach((item) => {
-  //   console.log(item.type);
-  // });
-
-  // const imports = src.getImportDeclarations();
-
-  // let isApiImport = false;
-  // for (let i = 0; i < imports.length; i++) {
-  //   const importDecl = imports[i];
-  //   const importNames = importDecl.getNamedImports().map((namedImport) => namedImport.getName());
-
-  //   if (importDecl.getModuleSpecifierValue() !== routifyConfig.librarySearchString) {
-  //     //not the right import statement
-  //     continue;
-  //   }
-
-  //   if (!importNames.includes(routifyConfig?.apiAddRouterFunc)) {
-  //     continue; // if the impor statement does not include our api name its not the correct candidate
-  //   }
-
-  //   isApiImport = true;
-  //   break; //we found our import so stop
-  // }
-};
-
-//TODO: still needed?
-const tscCheckIfContainsAddRouterImport = (src: SourceFile): boolean => {
-  const imports = src.getImportDeclarations();
-  //TODO: needs to be enabled and checked again !!!
-  // let isApiImport = false;
-  // for (let i = 0; i < imports.length; i++) {
-  //   const importDecl = imports[i];
-  //   const importNames = importDecl.getNamedImports().map((namedImport) => namedImport.getName());
-
-  //   if (importDecl.getModuleSpecifierValue() !== routifyConfig.librarySearchString) {
-  //     //not the right import statement
-  //     continue;
-  //   }
-
-  //   if (!importNames.includes(routifyConfig?.apiAddRouterFunc)) {
-  //     continue; // if the impor statement does not include our api name its not the correct candidate
-  //   }
-
-  //   isApiImport = true;
-  //   break; //we found our import so stop
-  // }
-
-  return false;
-  // return isApiImport;
 };
 
 //TODO: still needed
-const tscFindHandlerInstances = (src: SourceFile): void => {
-  // const functionCalls = src.getDescendantsOfKind(ts.SyntaxKind.CallExpression);
-  // for (const callExpr of functionCalls) {
-  //   const identifier = callExpr.getExpression();
-  //   // console.log(callExpr.getAncestors()[0].getText());
-  //   console.log(callExpr.getParent()?.getText());
-  //   if (identifier.getText() === routifyConfig.apiAddRouterFunc) {
-  //     console.log(
-  //       `'${routifyConfig.apiAddRouterFunc}' is called at line ${callExpr.getStartLineNumber()}`,
-  //     );
-  //   }
-  // }
-};
-
-//TODO: still needed?
-interface ExportedHandler {
-  name: string;
-  type: { type: string; param: string }[];
-  isExported: boolean;
-}
-
-//TODO: Still needed?
-const tscGetExportedHandlerFunctions = (src: SourceFile): ExportedHandler[] | undefined => {
-  const exports = src.getExportedDeclarations();
-
-  const tmpList: ExportedHandler[] = [];
-  for (const [key, value] of exports) {
-    //iterrate over the values
-    value.forEach((declaration) => {
-      // console.log(declaration.getType().getText());
-      const callExp = declaration.getFirstChildByKind(ts.SyntaxKind.CallExpression);
-
-      if (callExp) {
-        // const isExporteApiHandler = callExp
-        //   .getText()
-        //   .startsWith(routifyConfig.apiAddRouterFunc + '<');
-
-        const callParams = callExp.getArguments();
-        const callParamTypes = callParams.map((param) => {
-          return { type: param.getType().getText(), param: param.getText() };
-        });
-
-        // if (isExporteApiHandler) {
-        //   tmpList.push({
-        //     name: key,
-        //     type: callParamTypes,
-        //     isExported: isExporteApiHandler,
-        //   } as ExportedHandler);
-        // }
-      }
-    });
-  }
-
-  if (tmpList.length === 0) {
-    return;
-  }
-
-  return tmpList;
-};
-
-//TODO: still needed?
-const tscFindAndPrintTypeDefinitions = (src: SourceFile) => {
-  // src.forEachChild((child) => {
-  //   console.log('Child Kind', child.getKindName());
-  // });+
-
-  //Gets the type as string the way they are defined in code as string
-  // const types = src.getTypeAliases();
-  // types.forEach((item) => {
-  //   console.log(item.getText(), item.getSourceFile().getFilePath());
-  // });
-
-  // //Gets the interfaces as string the way they are defined in code as string
-  // const interfaces = src.getInterfaces();
-  // interfaces.forEach((item) => {
-  //   console.log(item.getText());
-  // });
-
-  // //see if we can find imported types also
-  // const tDir = src.getTypeReferenceDirectives();
-  // tDir.forEach((t) => {
-  //   console.log('tDir', t.getText());
-  // });
-
-  src.getChildrenOfKind(ts.SyntaxKind.TypeAliasDeclaration).forEach((c) => {
-    console.log('ccc -->', c.getText());
-  });
-
-  const decl = src.getImportDeclarations();
-  // decl.forEach((item) => {
-  //   // console.log('decl -->', item.getKindName());
-  //   // item.getChildren().forEach((child) => {
-  //   //   console.log('decl 1-->', child.getKindName());
-  //   // });
-
-  //   const k = item.getFirstChildByKind(ts.SyntaxKind.ImportClause);
-  //   k?.forEachChild((c) => {
-  //     // console.log('alla', c.getKindName());
-  //     c.forEachChild((d) => {
-  //       d.forEachChild((e) => {
-  //         console.log('typeText -->', e.getType().getIntersectionTypes());
-  //         console.log(typeChecker.getTypeText(e.getType()));
-  //       });
-  //       // console.log(d.getKindName());
-  //       // console.log('ert', d.getChildAtIndex(0).getType().getText());
-  //     });
-  //   });
-  // });
-};
 
 /**
  * Checks if the given string is a TypeScript native type.

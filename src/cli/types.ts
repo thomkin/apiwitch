@@ -1,8 +1,15 @@
 export type IterReturn = { [key: string]: any };
 
 export type CliConfig = {
-  includes?: string[];
+  includeDir: string;
   routeAddFctName?: string;
+};
+
+export type SourceList = {
+  params: string[];
+  query: string[];
+  body: string[];
+  header: string[];
 };
 
 export type ApiWitchRouteMeta = {

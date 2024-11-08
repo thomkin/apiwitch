@@ -3,11 +3,6 @@
   "version": "1.0.0",
   "description": "A small tool that can create routes for typescript web frameworks automatically like a witch",
   "main": "src/index.ts",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "tsc --watch --project tsconfig.json",
-    "generate": "ts-node ./src/cli/index.ts"
-  },
   "keywords": [],
   "author": "",
   "license": "MIT",
@@ -15,10 +10,13 @@
     "@badrap/valita": "^0.3.11",
     "@sinclair/typebox": "^0.33.20",
     "@types/fs-extra": "^11.0.4",
+    "@types/mustache": "^4.2.5",
     "commander": "^12.1.0",
     "fs-extra": "^11.2.0",
+    "mustache": "^4.2.0",
     "pino": "^9.5.0",
     "pino-pretty": "^11.3.0",
+    "prettier": "^3.3.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3",
     "winston": "^3.16.0"
