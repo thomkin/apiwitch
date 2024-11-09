@@ -1,3 +1,4 @@
+import { IterReturn } from '../cli/types';
 import { HttpErrorMsg } from './error';
 
 export enum FrameworkId {
@@ -73,6 +74,9 @@ export interface AutoGenMethodData {
   paramSelect?: string[];
   headerSelect?: string[];
   bestEffortSelect?: string[];
+  requestTypeString: string;
+  responseTypeString: string;
+  rawSchemaRequest: IterReturn;
 }
 
 /**

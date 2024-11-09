@@ -1,3 +1,7 @@
+import * as Codegen from '@sinclair/typebox-codegen';
+import { Type, type Static } from '@sinclair/typebox';
+import { TypeCompiler } from '@sinclair/typebox/compiler';
+
 import { AutoGenMethodData } from '../types';
 import { logger } from './logger';
 import { cliConfig } from '.';
@@ -6,6 +10,7 @@ import Mustache from 'mustache';
 import prettier from 'prettier';
 import path from 'path';
 import fs from 'fs';
+import { ValibotValidator } from './validation';
 
 type MethodHandlerMustache = {
   path: string;
@@ -32,6 +37,7 @@ export class RouteFileGenerator {
 
   importLines: string[];
   methods: string[];
+  private val = new ValibotValidator();
 
   constructor() {
     this.importLines = [];
@@ -53,7 +59,7 @@ export class RouteFileGenerator {
     ).trim();
   };
 
-  addAutoGenMethodData = (data: AutoGenMethodData | undefined | null) => {
+  addAutoGenMethodData = async (data: AutoGenMethodData | undefined | null) => {
     if (!data) {
       logger.warn(`input data not defined when calling addAutoGenMethodData`);
       return;
@@ -61,6 +67,8 @@ export class RouteFileGenerator {
 
     //construct a uniqe id for the naming the created method handler
     const uuid = this.getUUID(data.importPath, data.callback);
+
+    this.val.addValibotItem(data.rawSchemaRequest, uuid);
 
     //Create the process handler object
     const methodHandlerTemp = this.readMustacheTemplate(this.tempMethodHandler);
@@ -87,6 +95,8 @@ export class RouteFileGenerator {
     importData.uuid = uuid;
 
     this.importLines.push(Mustache.render(importTemp, importData));
+
+    //create the request and response type files
   };
 
   generate = async () => {
@@ -111,5 +121,9 @@ export class RouteFileGenerator {
 
     const outFilePath = path.join(outDir, 'index.ts');
     fs.writeFileSync(outFilePath, formattedTemplate, { flag: 'w' });
+
+    const validationFileRaw = await this.val.getTypeScript();
+    const outValidationPath = path.join(outDir, 'validation.ts');
+    fs.writeFileSync(outValidationPath, validationFileRaw, { flag: 'w' });
   };
 }

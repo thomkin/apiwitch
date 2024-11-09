@@ -64,7 +64,11 @@ const iterateOverProps = (
     const comment = extractInlineCommentByPropName(typeDeclaration.getText(), propName);
     const inputSelect = commentParser(comment || '', propName);
 
-    value[propName] = { type: propType.getText(), comment, inputSelect };
+    value[propName] = {
+      type: propType.getText(),
+      comment,
+      inputSelect,
+    };
     paramList.push(value);
   });
 
@@ -288,6 +292,9 @@ export const startTransform = (file: string): AutoGenMethodData | undefined => {
     querySelect: inputSelect.query,
     bestEffortSelect: inputSelect.bestEffort,
     auth: apiWitchRouteExport.meta.auth,
+    requestTypeString: (interfaceRequest || typeRequest)?.getText(),
+    responseTypeString: (interfaceResponse || typeResponse)?.getText(),
+    rawSchemaRequest: rawSchemaRequest,
   } as AutoGenMethodData;
 };
 

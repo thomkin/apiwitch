@@ -9,8 +9,11 @@ dependencies:
     specifier: ^0.3.11
     version: 0.3.11
   '@sinclair/typebox':
-    specifier: ^0.33.20
-    version: 0.33.20
+    specifier: ^0.33.21
+    version: 0.33.21
+  '@sinclair/typebox-codegen':
+    specifier: ^0.10.5
+    version: 0.10.5
   '@types/fs-extra':
     specifier: ^11.0.4
     version: 11.0.4
@@ -41,6 +44,9 @@ dependencies:
   typescript:
     specifier: ^5.6.3
     version: 5.6.3
+  valibot:
+    specifier: 1.0.0-beta.3
+    version: 1.0.0-beta.3(typescript@5.6.3)
   winston:
     specifier: ^3.16.0
     version: 3.16.0
@@ -57,7 +63,7 @@ devDependencies:
     version: 22.9.0
   elysia:
     specifier: ^1.1.24
-    version: 1.1.24(@sinclair/typebox@0.33.20)(typescript@5.6.3)
+    version: 1.1.24(@sinclair/typebox@0.33.21)(typescript@5.6.3)
   ts-morph:
     specifier: ^24.0.0
     version: 24.0.0
@@ -94,7 +100,7 @@ packages:
     peerDependencies:
       elysia: '>= 1.1.0'
     dependencies:
-      elysia: 1.1.24(@sinclair/typebox@0.33.20)(typescript@5.6.3)
+      elysia: 1.1.24(@sinclair/typebox@0.33.21)(typescript@5.6.3)
     dev: true
 
   /@elysiajs/swagger@1.1.5(elysia@1.1.24):
@@ -103,7 +109,7 @@ packages:
       elysia: '>= 1.1.0'
     dependencies:
       '@scalar/types': 0.0.12
-      elysia: 1.1.24(@sinclair/typebox@0.33.20)(typescript@5.6.3)
+      elysia: 1.1.24(@sinclair/typebox@0.33.21)(typescript@5.6.3)
       openapi-types: 12.1.3
       pathe: 1.1.2
     dev: true
@@ -137,8 +143,16 @@ packages:
       '@unhead/schema': 1.11.11
     dev: true
 
-  /@sinclair/typebox@0.33.20:
-    resolution: {integrity: sha512-gU8nPAO2A21UjaiUA0kKq47WDs2JcPkUUfXrEc+BuQnsN6ShohgXPqNepVW3VADIsG7Pbt8rzz2zhRlYRdBN9Q==}
+  /@sinclair/typebox-codegen@0.10.5:
+    resolution: {integrity: sha512-McGmpMd/UzIes5FElHeZcfir/E+6L6v6hAOtaNX9v6d8lhDfGSMCOqdDTLWJVuo1tladpxCchKTfP+98L0STAQ==}
+    dependencies:
+      '@sinclair/typebox': 0.33.21
+      prettier: 2.8.8
+      typescript: 5.6.3
+    dev: false
+
+  /@sinclair/typebox@0.33.21:
+    resolution: {integrity: sha512-1wU0VNSZQt13BmJvxYhHRVwDBnG8y5qrcyi3DnmEQzvfeRycUNneQSd6quyxrNbspM1pV/m4r4udO6o1tCuXjg==}
 
   /@ts-morph/common@0.25.0:
     resolution: {integrity: sha512-kMnZz+vGGHi4GoHnLmMhGNjm44kGtKUXGnOvrKmMwAuvNjM/PgKVGfUnL7IDvK7Jb2QQ82jq3Zmp04Gy+r3Dkg==}
@@ -317,7 +331,7 @@ packages:
     engines: {node: '>=0.3.1'}
     dev: false
 
-  /elysia@1.1.24(@sinclair/typebox@0.33.20)(typescript@5.6.3):
+  /elysia@1.1.24(@sinclair/typebox@0.33.21)(typescript@5.6.3):
     resolution: {integrity: sha512-viJOb+PADrxJn7ntlQfoXsLuVgHNS09gn9dj2yroHnwqheN0hZp81WCGRQXkvh4kW5zGISX50/eqAcoNDpdL/g==}
     peerDependencies:
       '@sinclair/typebox': '>= 0.32.0'
@@ -329,7 +343,7 @@ packages:
       typescript:
         optional: true
     dependencies:
-      '@sinclair/typebox': 0.33.20
+      '@sinclair/typebox': 0.33.21
       cookie: 1.0.1
       fast-decode-uri-component: 1.0.1
       typescript: 5.6.3
@@ -563,6 +577,12 @@ packages:
       thread-stream: 3.1.0
     dev: false
 
+  /prettier@2.8.8:
+    resolution: {integrity: sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q==}
+    engines: {node: '>=10.13.0'}
+    hasBin: true
+    dev: false
+
   /prettier@3.3.3:
     resolution: {integrity: sha512-i2tDNA0O5IrMO757lfrdQZCc2jPNDVntV0m/+4whiDfWaTKfMNgR7Qz0NAeGz/nRqF4m5/6CLzbP4/liHt12Ew==}
     engines: {node: '>=14'}
@@ -739,6 +759,17 @@ packages:
 
   /v8-compile-cache-lib@3.0.1:
     resolution: {integrity: sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==}
+    dev: false
+
+  /valibot@1.0.0-beta.3(typescript@5.6.3):
+    resolution: {integrity: sha512-PRknKVj2249cF8Pxqil1dahkVHgyaPDq++Y8sA96R5lx4nYnVazs11kefOsRVD3PSygYJG5q2MEdEm7kuSWa+g==}
+    peerDependencies:
+      typescript: '>=5'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+    dependencies:
+      typescript: 5.6.3
     dev: false
 
   /winston-transport@4.8.0:
