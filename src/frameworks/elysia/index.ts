@@ -4,6 +4,8 @@ import { cors } from '@elysiajs/cors';
 import { Elysia } from 'elysia';
 
 import swagger from '@elysiajs/swagger';
+import { getAuthHandler } from '../../core/auth';
+import { HttpErrorCode, HttpErrorMsg } from '../../core/error';
 
 let _app: Elysia;
 
@@ -124,6 +126,14 @@ const handleCommentInputSelect = (
   });
 };
 
+const authenticate = (context: any, handler: MethodHandler): HttpErrorMsg | undefined => {
+  const error = getAuthHandler(handler.auth)(context?.headers?.authorization);
+  return context.error(
+    error?.code || HttpErrorCode.InternalServerError,
+    error?.responseMsg || 'authenticate function failed unexpectedly',
+  );
+};
+
 const addRoute = (handler: MethodHandler) => {
   return (): MethodHandler => {
     switch (handler.method) {
@@ -132,14 +142,17 @@ const addRoute = (handler: MethodHandler) => {
           handler.path,
           (context) => {
             const request: { [key: string]: any } = {};
+
             handleBestEffortGet(context, handler, request);
             handleCommentInputSelect(context, handler, request);
-            return handler.callback(request);
+            return handler.callback(request, context.error, context.redirect);
           },
           {
-            beforeHandle: () => {
-              //TODO add an auth handler into here, different routes can select different handlers to be called
-              throw new Error('kackadue');
+            beforeHandle: (context) => {
+              const error = getAuthHandler(handler.auth)(context?.headers?.authorization);
+              if (error) {
+                return context.error(error.code, error.responseMsg);
+              }
             },
           },
         );
@@ -150,14 +163,18 @@ const addRoute = (handler: MethodHandler) => {
           handler.path,
           (context) => {
             const request: { [key: string]: any } = {};
+            getAuthHandler(handler.auth)(context?.headers?.authorization);
+
             handleBestEffortPost(context, handler, request);
             handleCommentInputSelect(context, handler, request);
-            return handler.callback(request);
+            return handler.callback(request, context.error, context.redirect);
           },
           {
-            beforeHandle: () => {
-              //TODO add an auth handler into here, different routes can select different handlers to be called
-              throw new Error('kackadue');
+            beforeHandle: (context) => {
+              const error = getAuthHandler(handler.auth)(context?.headers?.authorization);
+              if (error) {
+                return context.error(error.code, error.responseMsg);
+              }
             },
           },
         );
@@ -165,21 +182,43 @@ const addRoute = (handler: MethodHandler) => {
         break;
 
       case HttpMethods.patch:
-        _app.patch(handler.path, (context) => {
-          const request: { [key: string]: any } = {};
-          handleBestEffortPatch(context, handler, request);
-          handleCommentInputSelect(context, handler, request);
-          return handler.callback(request);
-        });
+        _app.patch(
+          handler.path,
+          (context) => {
+            const request: { [key: string]: any } = {};
+            handleBestEffortPatch(context, handler, request);
+            handleCommentInputSelect(context, handler, request);
+            return handler.callback(request, context.error, context.redirect);
+          },
+          {
+            beforeHandle: (context) => {
+              const error = getAuthHandler(handler.auth)(context?.headers?.authorization);
+              if (error) {
+                return context.error(error.code, error.responseMsg);
+              }
+            },
+          },
+        );
         break;
 
       case HttpMethods.delete:
-        _app.delete(handler.path, (context) => {
-          const request: { [key: string]: any } = {};
-          handleBestEffortDelete(context, handler, request);
-          handleCommentInputSelect(context, handler, request);
-          return handler.callback(request);
-        });
+        _app.delete(
+          handler.path,
+          (context) => {
+            const request: { [key: string]: any } = {};
+            handleBestEffortDelete(context, handler, request);
+            handleCommentInputSelect(context, handler, request);
+            return handler.callback(request, context.error, context.redirect);
+          },
+          {
+            beforeHandle: (context) => {
+              const error = getAuthHandler(handler.auth)(context?.headers?.authorization);
+              if (error) {
+                return context.error(error.code, error.responseMsg);
+              }
+            },
+          },
+        );
         break;
 
       default:

@@ -105,9 +105,9 @@ const processTypeOrInterface = (
 
 const apiWitchRouteMetaData = (
   dec: VariableDeclaration | undefined,
-): { method: string; path: string; auth: boolean } => {
+): { method: string; path: string; auth: boolean | string } => {
   const paList = dec?.getDescendantsOfKind(SyntaxKind.PropertyAssignment);
-  const ret: { method: string; path: string; auth: boolean } = {
+  const ret: { method: string; path: string; auth: boolean | string } = {
     method: 'undefined',
     path: 'undefined',
     auth: true,
@@ -122,7 +122,12 @@ const apiWitchRouteMetaData = (
     } else if (key === 'path') {
       ret.path = value?.slice(1, value.length - 1) || 'undefined';
     } else if (key == 'auth') {
-      ret.auth = value === 'true' ? true : false;
+      if (value) {
+        ret.auth = value?.slice(1, value.length - 1);
+      } else {
+        const value = pa.getFirstChildByKind(SyntaxKind.TrueKeyword)?.getText();
+        ret.auth = value === 'true' ? true : false;
+      }
     }
   });
 
@@ -271,6 +276,7 @@ export const startTransform = (file: string): AutoGenMethodData | undefined => {
    * we pass it back and let the top module handle the conversion. Parsing
    * is done ! Yeah! Hex Hex!
    */
+
   return {
     importPath: apiWitchRouteExport.srcPath,
     callback: apiWitchRouteExport.meta.variableName,

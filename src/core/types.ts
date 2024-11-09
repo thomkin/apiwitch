@@ -1,4 +1,6 @@
-export enum Framework {
+import { HttpErrorMsg } from './error';
+
+export enum FrameworkId {
   'elysia' = 'elysia',
 }
 
@@ -19,22 +21,22 @@ export interface FrameworkConfig {
 }
 
 export interface ApiwitchConfig {
-  framework: Framework;
+  frameworkId: FrameworkId;
   frameworkConfig: FrameworkConfig;
   witchcraftRoutes: MethodHandler[];
+  authHandlerMap: AuthHandlerMap;
 }
 
-// export interface RoutifyRouterCfg {
-//   addRoute: (opts: {
-//     method: string;
-//     auth: boolean | string; //boolean = rue use default auth handler, string use route handler based on given name
-//     callback: <Request, Response>(request: Request) => Promise<Response>;
-//   }) => void;
-// }
-
 export type FrameworkContext = {
-  init: (config: ApiwitchConfig) => void; //This MUST! be a synchronous function
-  addRoute: (handler: MethodHandler) => () => void | MethodHandler; //FUnction must return a nother function that when called will only trigger the adding
+  //This MUST! be a synchronous function
+  init: (config: ApiwitchConfig) => void;
+
+  //Function must return another function that when called will only trigger the adding
+  addRoute: (handler: MethodHandler) => () => void | MethodHandler;
+
+  //can be called by core to return an error, we have to see how this would work with different frameworks though, focusing elysia first
+  // error: (code: number, message: string) => void;
+  // addAuthHandler: (authorization: string) => boolean; //authorization is the data form Authorization header
 };
 
 export enum HttpMethods {
@@ -42,14 +44,6 @@ export enum HttpMethods {
   delete = 'delete',
   patch = 'patch',
   post = 'post',
-}
-
-interface CoreRequest {
-  header?: Object;
-  params?: Object;
-  query?: Object;
-  body?: Object;
-  meta?: { [key: string]: any }; //user defined metadata
 }
 
 export interface MethodHandler {
@@ -61,7 +55,11 @@ export interface MethodHandler {
   paramSelect?: string[];
   headerSelect?: string[];
   bestEffortSelect?: string[];
-  callback: (request: any) => Promise<any>;
+  callback: (
+    request: any,
+    error: (code: number, message: string) => void,
+    redirect: (url: string, status: 301 | 302 | 303 | 307 | 308 | undefined) => void,
+  ) => Promise<any>;
 }
 
 export interface AutoGenMethodData {
@@ -85,6 +83,9 @@ export interface AutoGenMethodData {
 export interface ApiWitchRoute {
   method: string;
   path: string;
-  auth?: boolean;
+  auth?: boolean | string;
   callback: (request: any) => Promise<any>;
 }
+
+export type AuthHandler = (authorization: string | undefined) => HttpErrorMsg | undefined;
+export type AuthHandlerMap = Map<string, AuthHandler>;

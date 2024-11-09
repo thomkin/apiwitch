@@ -9,7 +9,7 @@ import fs from 'fs';
 
 type MethodHandlerMustache = {
   path: string;
-  auth: string;
+  auth: boolean | string;
   method: string;
   callback: string;
   querySelect: string;
@@ -74,7 +74,7 @@ export class RouteFileGenerator {
     methodHandlerData.callback = uuid + '.callback';
     methodHandlerData.method = JSON.stringify(data.method);
     methodHandlerData.path = JSON.stringify(data.path);
-    methodHandlerData.auth = data?.auth ? 'true' : 'false';
+    methodHandlerData.auth = data.auth ? JSON.stringify(data.auth) : true;
     this.methods.push(Mustache.render(methodHandlerTemp, methodHandlerData));
 
     //Create import lines
