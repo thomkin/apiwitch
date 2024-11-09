@@ -126,14 +126,6 @@ const handleCommentInputSelect = (
   });
 };
 
-const authenticate = (context: any, handler: MethodHandler): HttpErrorMsg | undefined => {
-  const error = getAuthHandler(handler.auth)(context?.headers?.authorization);
-  return context.error(
-    error?.code || HttpErrorCode.InternalServerError,
-    error?.responseMsg || 'authenticate function failed unexpectedly',
-  );
-};
-
 const addRoute = (handler: MethodHandler) => {
   return (): MethodHandler => {
     switch (handler.method) {
@@ -171,6 +163,7 @@ const addRoute = (handler: MethodHandler) => {
           },
           {
             beforeHandle: (context) => {
+              console.log(context.headers.authorization);
               const error = getAuthHandler(handler.auth)(context?.headers?.authorization);
               if (error) {
                 return context.error(error.code, error.responseMsg);

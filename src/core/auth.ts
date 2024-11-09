@@ -4,7 +4,7 @@ import { AuthHandler } from './types';
 const _authHandlerMap: Map<string, AuthHandler> = new Map();
 
 const handlerPlaceholder = (authorization: string | undefined) => {
-  console.log('default auth handler called');
+  console.log('default auth handler called', authorization);
 
   return {
     code: HttpErrorCode.Unauthorized,
