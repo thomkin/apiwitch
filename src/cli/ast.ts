@@ -1,6 +1,7 @@
 import { InterfaceDeclaration, Node, SyntaxKind, TypeAliasDeclaration } from 'ts-morph';
 import { catchError, catchErrorSync } from './utils';
 import { IterItem, PropertyList } from './types';
+import { isNativeType } from './parser';
 
 export class AstParser {
   private propertyList: PropertyList = {};
@@ -24,10 +25,33 @@ export class AstParser {
       const type = identifier?.getType().getText();
       const name = identifier?.getText();
       const typeLiteral = property.getFirstChildByKind(SyntaxKind.TypeLiteral);
+      const question = property.getFirstChildByKind(SyntaxKind.QuestionToken)?.getText();
 
       if (typeLiteral) {
         //there is another type literal as the child so follow that first
         this.getTypesRecursively(property, indentName + '.' + name);
+
+        if (question) {
+          const override: PropertyList = {};
+          Object.keys(this.propertyList).forEach((key) => {
+            if (key.startsWith(indentName + '.' + name) && !key.includes('?')) {
+              const tmpKey = key.replace(indentName + '.' + name, indentName + '.' + name + '?');
+
+              //rename the routes to xxx?
+              //   const tmp = tmpKey.split('.');
+              //   if (!tmp[tmp.length - 2].endsWith('?')) {
+              //     tmp[tmp.length - 2] = tmp[tmp.length - 2] + '?';
+              //   }
+              //   override[tmp.join('.')] = this.propertyList[key];
+              override[tmpKey] = this.propertyList[key];
+            } else {
+              //copy data as is
+              override[key] = this.propertyList[key];
+            }
+          });
+
+          this.propertyList = override;
+        }
         return;
       } else {
         const question = property.getFirstChildByKind(SyntaxKind.QuestionToken)?.getText();

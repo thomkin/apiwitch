@@ -4,6 +4,7 @@ import Mustache from 'mustache';
 import prettier from 'prettier';
 import { PropertyList, PropertyListItem, TypeConfig } from './types';
 import { construct } from 'radash';
+import { cliConfig } from '.';
 
 export class ValibotValidator {
   private childDepth = 0;
@@ -66,8 +67,8 @@ export class ValibotValidator {
     return output;
   };
 
-  private valibotListToObject = (list: any) => {
-    let data = `v.object({`;
+  private valibotListToObject = (list: any, required: boolean) => {
+    let data = required ? `v.object({` : `v.optional(v.object({`;
     Object.keys(list).forEach((key, idx) => {
       const item = list[key];
       if (idx < Object.keys(list).length - 1) {
@@ -77,7 +78,7 @@ export class ValibotValidator {
       }
     });
 
-    data += '})';
+    data += required ? '})' : '}))';
 
     return data;
   };
@@ -114,7 +115,10 @@ export class ValibotValidator {
       }
     }
 
-    this.valibodObject[indentName] = this.valibotListToObject(valibotList);
+    this.valibodObject[indentName] = this.valibotListToObject(
+      valibotList,
+      indentName.endsWith('?') ? false : true,
+    );
 
     return { last: false, obj: this.valibodObject[indentName] };
 
@@ -159,7 +163,11 @@ export class ValibotValidator {
       valibotMap: this.toString(),
     });
 
-    const formattedTemplate = await prettier.format(data, {
+    //This is a little hacky we should not inlclude the question marks in the beggining
+    //The while flow could be thought trough a little better and improved uppon.
+    const tmp = data.replace(/\?/g, '');
+
+    const formattedTemplate = await prettier.format(tmp, {
       parser: 'typescript',
       singleQuote: true,
       trailingComma: 'all',
@@ -167,7 +175,11 @@ export class ValibotValidator {
       tabWidth: 2,
     });
 
-    console.log(formattedTemplate);
+    // console.log(formattedTemplate);
+    const outDir = path.join(process.cwd(), cliConfig.includeDir, 'witchcraft');
+    const outValidationPath = path.join(outDir, 'validation.ts');
+    fs.writeFileSync(outValidationPath, formattedTemplate, { flag: 'w' });
+
     return formattedTemplate;
   };
 }

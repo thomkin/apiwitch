@@ -10,6 +10,7 @@ export type PropertyListItem = {
   name: string;
   type: string;
   required: boolean;
+  ignore?: boolean;
 };
 
 export type PropertyList = {

@@ -117,9 +117,5 @@ export class RouteFileGenerator {
 
     const outFilePath = path.join(outDir, 'index.ts');
     fs.writeFileSync(outFilePath, formattedTemplate, { flag: 'w' });
-
-    // const validationFileRaw = await this.val.getTypeScript();
-    // const outValidationPath = path.join(outDir, 'validation.ts');
-    // fs.writeFileSync(outValidationPath, validationFileRaw, { flag: 'w' });
   };
 }

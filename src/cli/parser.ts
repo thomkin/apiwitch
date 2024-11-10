@@ -134,6 +134,11 @@ const processTypeOrInterface = (
       };
     });
 
+    console.log(
+      '\n\n manfred ----------- \n ',
+      astParser.getSchemaFromTypeDeclaration(typeDeclaration),
+    );
+
     return {
       propertyList: astParser.getSchemaFromTypeDeclaration(typeDeclaration),
       typeConfig: typeConfig,
