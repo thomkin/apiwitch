@@ -24,8 +24,9 @@ export interface FrameworkConfig {
 export interface ApiwitchConfig {
   frameworkId: FrameworkId;
   frameworkConfig: FrameworkConfig;
-  witchcraftRoutes: MethodHandler[];
   authHandlerMap: AuthHandlerMap;
+  witchcraftRoutes: MethodHandler[];
+  witchcraftSchemas: { [key: string]: any };
 }
 
 export type FrameworkContext = {
@@ -33,11 +34,10 @@ export type FrameworkContext = {
   init: (config: ApiwitchConfig) => void;
 
   //Function must return another function that when called will only trigger the adding
-  addRoute: (handler: MethodHandler) => () => void | MethodHandler;
-
-  //can be called by core to return an error, we have to see how this would work with different frameworks though, focusing elysia first
-  // error: (code: number, message: string) => void;
-  // addAuthHandler: (authorization: string) => boolean; //authorization is the data form Authorization header
+  addRoute: (
+    handler: MethodHandler,
+    witchcraftSchemas: { [key: string]: any },
+  ) => () => void | MethodHandler;
 };
 
 export enum HttpMethods {
@@ -51,6 +51,7 @@ export interface MethodHandler {
   method: HttpMethods;
   path: string;
   auth?: boolean | string;
+  uuid: string;
   querySelect?: string[];
   bodySelect?: string[];
   paramSelect?: string[];
@@ -75,9 +76,6 @@ export interface AutoGenMethodData {
   headerSelect: string[];
   bestEffortSelect: string[];
   uuid: string;
-  // requestTypeString: string;
-  // responseTypeString: string;
-  // rawSchemaRequest: IterReturn;
 }
 
 /**
@@ -89,6 +87,7 @@ export interface ApiWitchRoute {
   method: string;
   path: string;
   auth?: boolean | string;
+
   callback: (request: any) => Promise<any>;
 }
 

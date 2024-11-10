@@ -18,7 +18,7 @@ export const apiwitchInit = (config: ApiwitchConfig) => {
 
       //setup all the witchcraft routes --> auto generated from source code details
       config.witchcraftRoutes.forEach((route) => {
-        elysiaCtx.addRoute(route)();
+        elysiaCtx.addRoute(route, config.witchcraftSchemas)();
       });
 
       break;

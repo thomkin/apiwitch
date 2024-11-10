@@ -1,7 +1,3 @@
-import * as Codegen from '@sinclair/typebox-codegen';
-import { Type, type Static } from '@sinclair/typebox';
-import { TypeCompiler } from '@sinclair/typebox/compiler';
-
 import { AutoGenMethodData } from '../types';
 import { logger } from './logger';
 import { cliConfig } from '.';
@@ -15,6 +11,7 @@ type MethodHandlerMustache = {
   path: string;
   auth: boolean | string;
   method: string;
+  uuid: string;
   callback: string;
   querySelect: string;
   paramSelect: string;
@@ -49,36 +46,27 @@ export class RouteFileGenerator {
     return template;
   };
 
-  private getUUID = (importPath: string, callback: string) => {
-    return (
-      importPath.replace(/\//g, '_').replace(/\\/g, '_').replace(/\s+/g, '_').replace(/\./g, '_') +
-      '_' +
-      callback
-    ).trim();
-  };
-
   addRoute = async (data: AutoGenMethodData | undefined | null) => {
     if (!data) {
       logger.warn(`input data not defined when calling addAutoGenMethodData`);
       return;
     }
 
-    //construct a uniqe id for the naming the created method handler
-    // const uuid = this.getUUID(data.importPath, data.callback);
-
     //Create the process handler object
     const methodHandlerTemp = this.readMustacheTemplate(this.tempMethodHandler);
-    const methodHandlerData: MethodHandlerMustache = {} as MethodHandlerMustache;
+    const methodHandlerData: MethodHandlerMustache = {
+      bodySelect: JSON.stringify(data.bodySelect || []),
+      querySelect: JSON.stringify(data.querySelect || []),
+      paramSelect: JSON.stringify(data.paramSelect || []),
+      headerSelect: JSON.stringify(data.headerSelect || []),
+      bestEffortSelect: JSON.stringify(data.bestEffortSelect || []),
+      callback: data.uuid + '.callback',
+      method: JSON.stringify(data.method),
+      path: JSON.stringify(data.path),
+      auth: data.auth ? JSON.stringify(data.auth) : true,
+      uuid: JSON.stringify(data.uuid),
+    };
 
-    methodHandlerData.bodySelect = JSON.stringify(data.bodySelect || []);
-    methodHandlerData.querySelect = JSON.stringify(data.querySelect || []);
-    methodHandlerData.paramSelect = JSON.stringify(data.paramSelect || []);
-    methodHandlerData.headerSelect = JSON.stringify(data.headerSelect || []);
-    methodHandlerData.bestEffortSelect = JSON.stringify(data.bestEffortSelect || []);
-    methodHandlerData.callback = data.uuid + '.callback';
-    methodHandlerData.method = JSON.stringify(data.method);
-    methodHandlerData.path = JSON.stringify(data.path);
-    methodHandlerData.auth = data.auth ? JSON.stringify(data.auth) : true;
     this.methods.push(Mustache.render(methodHandlerTemp, methodHandlerData));
 
     //Create import lines

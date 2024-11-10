@@ -1,13 +1,12 @@
 import { catchError, getTypeScriptFiles, getUUID, mergeSourceLists } from './utils';
+import { AutoGenMethodData, HttpMethods } from '../types';
 import { RouteFileGenerator } from './fileGenerator';
 import { ErrorCode, logger } from './logger';
+import { ValibotValidator } from './valibot';
 import { startTransform } from './parser';
 import { CliConfig } from './types';
-import { construct } from 'radash';
-import { ValibotValidator } from './valibot';
 
 import fs from 'fs-extra';
-import { AutoGenMethodData, HttpMethods } from '../types';
 
 export let cliConfig: CliConfig = { includeDir: '' };
 
@@ -48,8 +47,6 @@ export const run = async () => {
     const rfg = new RouteFileGenerator();
     const valibot = new ValibotValidator();
 
-    console.log(JSON.stringify(tsFiles));
-
     tsFiles.forEach((tsFile) => {
       logger.info(`Parse file ::${tsFile}`);
       const res = startTransform(tsFile);
@@ -76,7 +73,7 @@ export const run = async () => {
         rfg.addRoute(methodDateRequest);
 
         //then add pass information to valibot so that it can generate the schemas
-        valibot.addValibotItem(res.request.propertyList, uuid);
+        valibot.addValibotItem(res.request.propertyList, uuid, 'request');
       }
     });
 

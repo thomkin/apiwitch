@@ -1,17 +1,16 @@
-import path from 'path';
-import fs from 'fs';
-import Mustache from 'mustache';
-import prettier from 'prettier';
-import { PropertyList, PropertyListItem, TypeConfig } from './types';
+import { PropertyList, PropertyListItem } from './types';
 import { construct } from 'radash';
 import { cliConfig } from '.';
+
+import Mustache from 'mustache';
+import prettier from 'prettier';
+import path from 'path';
+import fs from 'fs';
 
 export class ValibotValidator {
   private childDepth = 0;
   private keyChain: string[] = [];
-
   private valibodObject: { [key: string]: string } = {};
-
   private valibotMap: { [key: string]: any } = {};
 
   constructor() {}
@@ -49,8 +48,6 @@ export class ValibotValidator {
       this.keyChain.push(key);
       if (typeof data[key] === 'object') {
         //we have more children
-
-        // this.filtered[key] = {};
         this.childDepth++;
         this.iterateOverSchema(data[key], key);
         this.childDepth--;
@@ -61,8 +58,8 @@ export class ValibotValidator {
 
     this.keyChain.pop();
   };
-  //TODO: right now all fields are optional but would be better to get this form the code
-  private propListItemToValibotString = (obj: PropertyListItem, indentName: string) => {
+
+  private propListItemToValibotString = (obj: PropertyListItem) => {
     let output = `${!obj.required ? 'v.optional(' : ''}v.${obj.type}()${!obj.required ? ')' : ''}`;
     return output;
   };
@@ -87,7 +84,6 @@ export class ValibotValidator {
     data: any,
     indentName: string,
   ): { last: boolean; obj: string | undefined } => {
-    // this.valibodObject[indentName] = output;
     const valibotList: any = {};
 
     for (let i = 0; i < Object.keys(data).length; i++) {
@@ -99,16 +95,9 @@ export class ValibotValidator {
         const ret = this.recursiveValibotCreator(data[key], tmpName + key);
         if (ret.obj) {
           valibotList[key] = ret.obj;
-          console.log('valibo List Update 1 ', key, valibotList[key]);
         } else if (ret.last) {
-          valibotList[key] = this.propListItemToValibotString(data[key], tmpName + key);
-          console.log('valibo List Update 2 ', key, valibotList[key]);
+          valibotList[key] = this.propListItemToValibotString(data[key]);
         }
-
-        //we have found a prp item convert it into valibot code string
-        // const obj = data[key] as PropertyListItem;
-
-        //
       } else {
         //we reached a native type so we can start processing but we have to go one iteration backwards
         return { obj: undefined, last: true };
@@ -121,21 +110,12 @@ export class ValibotValidator {
     );
 
     return { last: false, obj: this.valibodObject[indentName] };
-
-    // const tmp = this.convertObjectToValibotString(data);
-
-    // return tmp;
   };
 
-  addValibotItem = (typeConfig: PropertyList, uuid: string) => {
-    // console.log(JSON.stringify(construct(typeConfig), null, 2));
-    console.log(typeConfig);
-
+  addValibotItem = (typeConfig: PropertyList, uuid: string, id: string) => {
     const constructedConfig = Object.values(construct(typeConfig))[0];
-
     const valibot = this.recursiveValibotCreator(constructedConfig, '');
-    this.valibotMap[uuid + '_valibot'] = valibot.obj;
-
+    this.valibotMap[uuid + '_valibot_' + id] = valibot.obj;
     return;
   };
 
@@ -163,8 +143,8 @@ export class ValibotValidator {
       valibotMap: this.toString(),
     });
 
-    //This is a little hacky we should not inlclude the question marks in the beggining
-    //The while flow could be thought trough a little better and improved uppon.
+    //This is a little hacky we should not included the question marks in the beginning
+    //The while flow could be thought trough a little better and improved upon.
     const tmp = data.replace(/\?/g, '');
 
     const formattedTemplate = await prettier.format(tmp, {
@@ -175,7 +155,6 @@ export class ValibotValidator {
       tabWidth: 2,
     });
 
-    // console.log(formattedTemplate);
     const outDir = path.join(process.cwd(), cliConfig.includeDir, 'witchcraft');
     const outValidationPath = path.join(outDir, 'validation.ts');
     fs.writeFileSync(outValidationPath, formattedTemplate, { flag: 'w' });

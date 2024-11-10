@@ -4,6 +4,14 @@ import { CommentInputSelect, IterReturn } from './types';
 import { logger } from './logger';
 import { InterfaceDeclaration, SyntaxKind, TypeAliasDeclaration } from 'ts-morph';
 
+/*************  ✨ Codeium Command ⭐  *************/
+/**
+ * This function takes a directory path and returns an array of paths to all
+ * the typescript files in that directory and any subdirectories.
+ * @param includeDir the directory to start searching for typescript files
+ * @returns an array of paths to all the typescript files
+ */
+/******  1b3d552b-b587-45bb-9692-eaebcaa14d6e  *******/
 export const getTypeScriptFiles = (includeDir: string) => {
   const tsFiles: string[] = [];
   const addTsFiles = (dirPath: string) => {
@@ -23,6 +31,19 @@ export const getTypeScriptFiles = (includeDir: string) => {
   return tsFiles;
 };
 
+/*************  ✨ Codeium Command ⭐  *************/
+/**
+ * Given a promise, this function will catch any errors that are thrown
+ * and return a promise that resolves to an array with either:
+ * - [undefined, data] if the promise resolves successfully
+ * - [error] if the promise rejects
+ *
+ * This is useful for handling errors in a functional style.
+ *
+ * @param promise - the promise to be wrapped
+ * @returns a promise that resolves to an array with either [undefined, data] or [error]
+ */
+/******  8ea463d0-1b11-4794-bb8d-9ba1a50037e0  *******/
 export const catchError = <T>(promise: Promise<T>): Promise<[undefined, T] | [Error]> => {
   return promise
     .then((data) => {
@@ -33,15 +54,24 @@ export const catchError = <T>(promise: Promise<T>): Promise<[undefined, T] | [Er
     });
 };
 
-export const catchErrorSync = (fn: any): [undefined, any] | [Error] => {
-  try {
-    const result = fn();
-    return [undefined, result];
-  } catch (error) {
-    return [error as Error];
-  }
-};
-
+/**
+ * Given a raw schema that contains inputSelect objects, this function
+ * will iterate through the raw schema and extract all the inputSelect
+ * objects and merge them into a single object.
+ *
+ * The merged object will have the following properties:
+ * - body: an array of strings representing the body path
+ * - params: an array of strings representing the params path
+ * - header: an array of strings representing the header path
+ * - query: an array of strings representing the query path
+ * - bestEffort: an array of strings representing the bestEffort path
+ *
+ * The order of the elements in the merged array is the order of which
+ * they were discovered in the raw schema.
+ *
+ * @param rawSchema - the raw schema
+ * @returns the merged object
+ */
 export const mergeInputSelect = (rawSchema: IterReturn) => {
   const retval: SourceList[] = [];
   function findInputSelects(obj: any) {
@@ -76,85 +106,19 @@ export const mergeInputSelect = (rawSchema: IterReturn) => {
   return mergedObject;
 };
 
-const parseHeaderInput = (comment: string): string | null => {
-  const headerRegex = /@header\((.*)\)/;
-  const match = comment.match(headerRegex);
-
-  return match ? match[1] : null;
-};
-
-const parseInputWithoutParams = (comment: string, input: CommentInputSelect): string | null => {
-  return comment.includes(input) ? input : null;
-};
-
-export const createSourceSelectLists = (
-  comment: string,
-  paramName: string,
-): SourceList | undefined => {
-  const params = parseInputWithoutParams(comment, CommentInputSelect.params);
-  const query = parseInputWithoutParams(comment, CommentInputSelect.query);
-  const body = parseInputWithoutParams(comment, CommentInputSelect.body);
-  const header = parseHeaderInput(comment);
-
-  //If no input is specified use best effort data source resolver
-  if (!params && !query && !body && !header) {
-    const sl: SourceList = {
-      body: [],
-      params: [],
-      header: [],
-      query: [],
-      bestEffort: [paramName],
-    };
-    return sl;
-  }
-
-  if (params) {
-    const sl: SourceList = {
-      body: [],
-      params: [paramName],
-      header: [],
-      query: [],
-      bestEffort: [],
-    };
-    return sl;
-  }
-
-  if (query) {
-    const sl: SourceList = {
-      body: [],
-      params: [],
-      header: [],
-      query: [paramName],
-      bestEffort: [],
-    };
-    return sl;
-  }
-
-  if (body) {
-    const sl: SourceList = {
-      body: [paramName],
-      params: [],
-      header: [],
-      query: [],
-      bestEffort: [],
-    };
-    return sl;
-  }
-
-  if (header) {
-    const sl: SourceList = {
-      body: [],
-      params: [],
-      header: [paramName + ' ' + header],
-      query: [],
-      bestEffort: [],
-    };
-    return sl;
-  }
-
-  return;
-};
-
+/**
+ * Given a source name, a name and parameters, this function
+ * returns a SourceList object with all the other properties
+ * empty except for the property that matches the sourceName.
+ * If the sourceName is not one of the four supported sources
+ * (header, query, params, body) then the bestEffort property is
+ * set.
+ *
+ * @param sourceName - the name of the source
+ * @param name - the name of the property
+ * @param parameters - the parameters that should be appended to the name
+ * @returns a SourceList object
+ */
 const getSourceList = (sourceName: string, name: string, parameters: string): SourceList => {
   switch (sourceName) {
     case 'header':
@@ -205,6 +169,14 @@ const getSourceList = (sourceName: string, name: string, parameters: string): So
   };
 };
 
+/**
+ * Takes a string and returns an object with 3 properties:
+ * - inputSource: the source of the input. Can be header, query, body, or params
+ * - cleanText: the text without the input source
+ * - params: an array of strings with the parameters if they are given
+ * @param text the text to extract the input source from
+ * @returns an object with the input source, the clean text, and the parameters
+ */
 const extractInputSource = (
   text: string,
 ): { inputSource: string; cleanText: string; params: string } => {
@@ -218,11 +190,26 @@ const extractInputSource = (
   return { inputSource: name || '', cleanText, params: params.join(' ') };
 };
 
+/**
+ * Takes a string and returns the first part of it, trimmed.
+ * The string is split by '::' and the first part is returned.
+ * @param text the string to split
+ * @returns the first part of the string, trimmed
+ */
 const extractKeyName = (text: string) => {
   const parts = text.split('::');
   return parts[0].trim();
 };
 
+/**
+ * Extracts options from a comment string.
+ *
+ * This function takes a string containing options enclosed in curly braces
+ * and returns an array of strings, each representing an option found in the comment.
+ *
+ * @param comment - The comment string containing options in curly braces.
+ * @returns An array of options extracted from the comment.
+ */
 const getOptionsFromComment = (comment: string): string[] => {
   const regex = /\{([^}]+)\}/g;
   const matches = [];
@@ -233,6 +220,17 @@ const getOptionsFromComment = (comment: string): string[] => {
   return matches;
 };
 
+/**
+ * This function takes a string and a keyPrepend and returns an array of CommentConfigItems.
+ * The string is expected to be a block comment that contains a list of keys and values.
+ * The keyPrepend is a string that is added to the beginning of each key.
+ * The function extracts the keys and values from the string and creates a CommentConfigItem for each.
+ * The CommentConfigItem contains the key, the inputSource, the sourceList, the pipe, and the params.
+ * The function returns an array of CommentConfigItems or undefined if the string is empty.
+ * @param text the string to parse
+ * @param keyPrepend the string to add to the beginning of each key
+ * @returns an array of CommentConfigItems or undefined
+ */
 export const parseTypeCommentConfig = (
   text: string,
   keyPrepend: string,
@@ -264,10 +262,13 @@ export const parseTypeCommentConfig = (
   return;
 };
 
-export const removeTypeScriptComments = (code: string): string => {
-  return code.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '').trim();
-};
-
+/**
+ * This function takes a ProcessTypeResult and merges all the source lists together.
+ * It returns a single SourceList with all the merged data.
+ *
+ * @param data - The data object with the typeConfig as a property
+ * @returns A single SourceList with all the merged data.
+ */
 export const mergeSourceLists = (data: ProcessTypeResult) => {
   let finalSrcList = {
     body: [],
@@ -303,20 +304,22 @@ export const getUUID = (importPath: string, callback: string) => {
   ).trim();
 };
 
-// export const getTypesFromAst = (
-//   typeDeclaration: TypeAliasDeclaration | InterfaceDeclaration,
-//   indentLevel: number,
-// ) => {
-//   const typeLiteral = typeDeclaration.getFirstDescendantByKindOrThrow(SyntaxKind.TypeLiteral);
+export function isNativeType(s: string): boolean {
+  const knownNativeTypes = [
+    'any',
+    'number',
+    'string',
+    'boolean',
+    'symbol',
+    'undefined',
+    'null',
+    'void',
+    'never',
+    'unknown',
+    'object',
+    'Date',
+    'date',
+  ];
 
-//   const propertySignatures = typeLiteral
-//     .getChildrenOfKind(SyntaxKind.PropertySignature)
-//     .forEach((child, idx) => {
-//       const tl = child.getChildrenOfKind(SyntaxKind.TypeLiteral);
-
-//       tl.forEach((tlChild) => {
-//         console.log(tlChild.getChildrenOfKind(SyntaxKind.PropertySignature)[0].getName());
-//         console.log(tlChild.getChildrenOfKind(SyntaxKind.PropertySignature)[1].getName());
-//       });
-//     });
-// };
+  return knownNativeTypes.includes(s);
+}

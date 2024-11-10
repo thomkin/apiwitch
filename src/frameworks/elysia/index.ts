@@ -1,4 +1,5 @@
 import { ApiwitchConfig, FrameworkContext, HttpMethods, MethodHandler } from '../../types';
+import * as v from 'valibot';
 import { convertString } from '../../core/utils';
 import { cors } from '@elysiajs/cors';
 import { Elysia } from 'elysia';
@@ -126,7 +127,7 @@ const handleCommentInputSelect = (
   });
 };
 
-const addRoute = (handler: MethodHandler) => {
+const addRoute = (handler: MethodHandler, witchcraftSchemas: { [key: string]: any }) => {
   return (): MethodHandler => {
     switch (handler.method) {
       case HttpMethods.get:
@@ -137,10 +138,16 @@ const addRoute = (handler: MethodHandler) => {
 
             handleBestEffortGet(context, handler, request);
             handleCommentInputSelect(context, handler, request);
+
+            //Then validate the inputs
+            const requestSchema = witchcraftSchemas[handler.uuid + '_valibot_request'];
+            console.log('REquest Shema', requestSchema);
+
             return handler.callback(request, context.error, context.redirect);
           },
           {
             beforeHandle: (context) => {
+              //First authenticate
               const error = getAuthHandler(handler.auth)(context?.headers?.authorization);
               if (error) {
                 return context.error(error.code, error.responseMsg);
@@ -155,15 +162,20 @@ const addRoute = (handler: MethodHandler) => {
           handler.path,
           (context) => {
             const request: { [key: string]: any } = {};
-            getAuthHandler(handler.auth)(context?.headers?.authorization);
+
+            console.log(handler);
 
             handleBestEffortPost(context, handler, request);
             handleCommentInputSelect(context, handler, request);
+
+            //Then validate the inputs
+            const requestSchema = witchcraftSchemas[handler.uuid + '_valibot_request'];
+            v.parse(requestSchema, request);
+
             return handler.callback(request, context.error, context.redirect);
           },
           {
             beforeHandle: (context) => {
-              console.log(context.headers.authorization);
               const error = getAuthHandler(handler.auth)(context?.headers?.authorization);
               if (error) {
                 return context.error(error.code, error.responseMsg);

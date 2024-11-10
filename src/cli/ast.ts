@@ -1,7 +1,5 @@
 import { InterfaceDeclaration, Node, SyntaxKind, TypeAliasDeclaration } from 'ts-morph';
-import { catchError, catchErrorSync } from './utils';
 import { IterItem, PropertyList } from './types';
-import { isNativeType } from './parser';
 
 export class AstParser {
   private propertyList: PropertyList = {};
@@ -34,15 +32,10 @@ export class AstParser {
         if (question) {
           const override: PropertyList = {};
           Object.keys(this.propertyList).forEach((key) => {
-            if (key.startsWith(indentName + '.' + name) && !key.includes('?')) {
-              const tmpKey = key.replace(indentName + '.' + name, indentName + '.' + name + '?');
-
-              //rename the routes to xxx?
-              //   const tmp = tmpKey.split('.');
-              //   if (!tmp[tmp.length - 2].endsWith('?')) {
-              //     tmp[tmp.length - 2] = tmp[tmp.length - 2] + '?';
-              //   }
-              //   override[tmp.join('.')] = this.propertyList[key];
+            if (key.startsWith(indentName + '.' + name)) {
+              const tmpKey = key
+                .replace(indentName + '.' + name, indentName + '.' + name + '?')
+                .replace('??', '?'); //That's a little ugly but to ensure we cannot get two ??
               override[tmpKey] = this.propertyList[key];
             } else {
               //copy data as is

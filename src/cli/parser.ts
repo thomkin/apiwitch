@@ -1,18 +1,18 @@
+import { isNativeType, parseTypeCommentConfig } from './utils';
+import { logger, ErrorCode } from './logger';
+import { cliConfig } from './index';
+import { AstParser } from './ast';
+import { cwd } from 'process';
+import path from 'path';
+
 import {
   ApiWitchRouteExport,
   ApiWitchRouteMeta,
   IterReturn,
   ProcessTypeResult,
-  PropertyList,
   TransformResult,
   TypeConfig,
 } from './types';
-import { parseTypeCommentConfig, removeTypeScriptComments } from './utils';
-import { logger, ErrorCode } from './logger';
-import { AutoGenMethodData } from '../types';
-import { cliConfig } from './index';
-import { cwd } from 'process';
-import path from 'path';
 
 import {
   Project,
@@ -24,29 +24,6 @@ import {
   SyntaxKind,
   VariableDeclaration,
 } from 'ts-morph';
-import { AstParser } from './ast';
-
-const isOptional = (typeString: string, propName: string): { isOptional: boolean } | undefined => {
-  const codeOnly = removeTypeScriptComments(typeString);
-  const dataArr = codeOnly.split('\n');
-
-  for (let i = 0; i < dataArr.length; i++) {
-    const line = dataArr[i];
-
-    let _propName = line.split(':')[0].trim();
-
-    const isOptional = _propName.includes('?');
-    _propName = _propName.replace(/\?/g, '');
-
-    if (_propName === propName) {
-      return { isOptional };
-    }
-
-    continue;
-  }
-
-  return;
-};
 
 const iterateOverProps = (
   propList: Symbol[],
@@ -59,13 +36,8 @@ const iterateOverProps = (
 
   propList.forEach((prop, idx) => {
     const propName = prop.getName();
-
     const propType = typeChecker.getTypeOfSymbolAtLocation(prop, typeDeclaration);
     const isNative = isNativeType(propType.getText());
-
-    // constructTypesFromAst(typeDeclaration, 0);
-
-    // console.log('Prop Type --------', propType.getProperties()[0].get);
 
     if (!isNative) {
       const _propType = propType.getProperties();
@@ -82,12 +54,7 @@ const iterateOverProps = (
     }
 
     //if we come here it means we reached the end of the child branch
-
     const value = {} as IterReturn;
-    const optional = isOptional(typeDeclaration.getText(), propName);
-    // const inputSelect = createSourceSelectLists(tmp?.comment || '', propName);
-
-    // value[propName] = { type: propType.getText(), required: !optional };
     paramList.push(value);
   });
 
@@ -99,17 +66,6 @@ const iterateOverProps = (
 
   paramList.forEach((item) => {
     merged[topName] = { ...merged[topName], ...item };
-    // const comment = splitCodeAndComments(typeDeclaration.getText(), topName, indentLevel);
-    // if (comment) {
-    //   // const inputSelect = createSourceSelectLists(comment.comment || '', topName);
-    //   merged[topName] = {
-    //     ...merged[topName],
-    //     ...p,
-    //     // comment: comment,
-    //     // inputSelect,
-    //   };
-    // } else {
-    // }
   });
 
   return merged;
@@ -117,7 +73,6 @@ const iterateOverProps = (
 
 const processTypeOrInterface = (
   typeDeclaration: TypeAliasDeclaration | InterfaceDeclaration | undefined,
-  typeChecker: TypeChecker,
   keyPrepend: string,
 ): ProcessTypeResult | undefined | null => {
   if (typeDeclaration) {
@@ -134,40 +89,12 @@ const processTypeOrInterface = (
       };
     });
 
-    console.log(
-      '\n\n manfred ----------- \n ',
-      astParser.getSchemaFromTypeDeclaration(typeDeclaration),
-    );
-
     return {
       propertyList: astParser.getSchemaFromTypeDeclaration(typeDeclaration),
       typeConfig: typeConfig,
     };
   }
   return;
-
-  // const tsType = typeChecker.getTypeAtLocation(typeDeclaration);
-  // const propList = tsType.getProperties();
-
-  // const result: IterReturn = {};
-
-  // //@ts-ignore
-  // result[typeDeclaration.getName()] = {};
-
-  // const ret = iterateOverProps(
-  //   propList,
-  //   typeDeclaration,
-  //   typeDeclaration.getName(),
-  //   typeChecker,
-  //   0,
-  // );
-
-  // const typeConfig = parseTypeCommentConfig(typeDeclaration.getText());
-
-  // return {
-  //   typeConfig: typeConfig || [],
-  //   typeObject: ret || {},
-  // };
 };
 
 const apiWitchRouteMetaData = (
@@ -319,11 +246,7 @@ export const startTransform = (file: string): TransformResult | undefined => {
    * for automatic client generation
    */
 
-  const requestData = processTypeOrInterface(
-    interfaceRequest || typeRequest,
-    typeChecker,
-    'request.',
-  );
+  const requestData = processTypeOrInterface(interfaceRequest || typeRequest, 'request.');
   if (!requestData) {
     logger.error(
       ErrorCode.RequestRawSchemaFailed,
@@ -332,11 +255,7 @@ export const startTransform = (file: string): TransformResult | undefined => {
     return;
   }
 
-  const responseData = processTypeOrInterface(
-    interfaceResponse || typeResponse,
-    typeChecker,
-    'response.',
-  );
+  const responseData = processTypeOrInterface(interfaceResponse || typeResponse, 'response.');
   if (!responseData) {
     logger.error(
       ErrorCode.ResponseRawSchemaFailed,
@@ -346,55 +265,4 @@ export const startTransform = (file: string): TransformResult | undefined => {
   }
 
   return { request: requestData, response: responseData, config: apiWitchRouteExport };
-
-  // const inputSelect = mergeInputSelect(rawSchemaRequest);
-
-  /**
-   * Now let us put everything together, create of type MethodHandler
-   * we pass it back and let the top module handle the conversion. Parsing
-   * is done ! Yeah! Hex Hex!
-   */
-
-  //TODO: this needs to be fixed!!!!!
-  // return {
-  //   importPath: apiWitchRouteExport.srcPath,
-  //   callback: apiWitchRouteExport.meta.variableName,
-  //   path: apiWitchRouteExport.meta.path,
-  //   method: apiWitchRouteExport.meta.method,
-  //   bodySelect: inputSelect.body,
-  //   headerSelect: inputSelect.header,
-  //   paramSelect: inputSelect.params,
-  //   querySelect: inputSelect.query,
-  //   bestEffortSelect: inputSelect.bestEffort,
-  //   auth: apiWitchRouteExport.meta.auth,
-  //   requestTypeString: (interfaceRequest || typeRequest)?.getText(),
-  //   responseTypeString: (interfaceResponse || typeResponse)?.getText(),
-  //   rawSchemaRequest: rawSchemaRequest,
-  // } as AutoGenMethodData;
 };
-
-/**
- * Checks if the given string is a TypeScript native type.
- *
- * @param {string} s The string to check.
- * @returns {boolean} True if the string is a TypeScript native type, otherwise false.
- */
-export function isNativeType(s: string): boolean {
-  const knownNativeTypes = [
-    'any',
-    'number',
-    'string',
-    'boolean',
-    'symbol',
-    'undefined',
-    'null',
-    'void',
-    'never',
-    'unknown',
-    'object',
-    'Date',
-    'date',
-  ];
-
-  return knownNativeTypes.includes(s);
-}

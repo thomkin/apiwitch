@@ -6,6 +6,8 @@ const _authHandlerMap: Map<string, AuthHandler> = new Map();
 const handlerPlaceholder = (authorization: string | undefined) => {
   console.log('default auth handler called', authorization);
 
+  return;
+
   return {
     code: HttpErrorCode.Unauthorized,
     responseMsg: {

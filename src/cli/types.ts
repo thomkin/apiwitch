@@ -31,7 +31,6 @@ export type ParserReturn = {
 };
 
 export type IterReturn = { [key: string]: IterItem };
-// export type IterReturn = { [key: string]: any };
 
 export type CliConfig = {
   includeDir: string;
@@ -71,6 +70,7 @@ export enum InputSourceEnum {
   body = 'body',
   query = 'query',
 }
+
 export type CommentConfigItem = {
   inputSource: { source: InputSourceEnum; params: string | null };
   sourceList: SourceList;
