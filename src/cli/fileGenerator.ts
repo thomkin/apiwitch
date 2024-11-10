@@ -10,7 +10,6 @@ import Mustache from 'mustache';
 import prettier from 'prettier';
 import path from 'path';
 import fs from 'fs';
-import { ValibotValidator } from './validation';
 
 type MethodHandlerMustache = {
   path: string;
@@ -37,7 +36,6 @@ export class RouteFileGenerator {
 
   importLines: string[];
   methods: string[];
-  private val = new ValibotValidator();
 
   constructor() {
     this.importLines = [];
@@ -59,16 +57,14 @@ export class RouteFileGenerator {
     ).trim();
   };
 
-  addAutoGenMethodData = async (data: AutoGenMethodData | undefined | null) => {
+  addRoute = async (data: AutoGenMethodData | undefined | null) => {
     if (!data) {
       logger.warn(`input data not defined when calling addAutoGenMethodData`);
       return;
     }
 
     //construct a uniqe id for the naming the created method handler
-    const uuid = this.getUUID(data.importPath, data.callback);
-
-    this.val.addValibotItem(data.rawSchemaRequest, uuid);
+    // const uuid = this.getUUID(data.importPath, data.callback);
 
     //Create the process handler object
     const methodHandlerTemp = this.readMustacheTemplate(this.tempMethodHandler);
@@ -79,7 +75,7 @@ export class RouteFileGenerator {
     methodHandlerData.paramSelect = JSON.stringify(data.paramSelect || []);
     methodHandlerData.headerSelect = JSON.stringify(data.headerSelect || []);
     methodHandlerData.bestEffortSelect = JSON.stringify(data.bestEffortSelect || []);
-    methodHandlerData.callback = uuid + '.callback';
+    methodHandlerData.callback = data.uuid + '.callback';
     methodHandlerData.method = JSON.stringify(data.method);
     methodHandlerData.path = JSON.stringify(data.path);
     methodHandlerData.auth = data.auth ? JSON.stringify(data.auth) : true;
@@ -92,7 +88,7 @@ export class RouteFileGenerator {
 
     const importWithoutExt = data.importPath.replace(/\.[^.]*$/, '');
     importData.includeDir = JSON.stringify(importWithoutExt.replace(cliConfig.includeDir, '..'));
-    importData.uuid = uuid;
+    importData.uuid = data.uuid;
 
     this.importLines.push(Mustache.render(importTemp, importData));
 
@@ -122,8 +118,8 @@ export class RouteFileGenerator {
     const outFilePath = path.join(outDir, 'index.ts');
     fs.writeFileSync(outFilePath, formattedTemplate, { flag: 'w' });
 
-    const validationFileRaw = await this.val.getTypeScript();
-    const outValidationPath = path.join(outDir, 'validation.ts');
-    fs.writeFileSync(outValidationPath, validationFileRaw, { flag: 'w' });
+    // const validationFileRaw = await this.val.getTypeScript();
+    // const outValidationPath = path.join(outDir, 'validation.ts');
+    // fs.writeFileSync(outValidationPath, validationFileRaw, { flag: 'w' });
   };
 }

@@ -32,7 +32,6 @@ export const logger = {
     } else {
       _logger.debug(JSON.stringify(msg));
     }
-    _logger.debug(msg);
   },
   warn: (msg: string) => {
     if (typeof msg === 'string') {

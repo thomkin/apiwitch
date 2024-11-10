@@ -2,10 +2,14 @@ import path from 'path';
 import fs from 'fs';
 import Mustache from 'mustache';
 import prettier from 'prettier';
+import { PropertyList, PropertyListItem, TypeConfig } from './types';
+import { construct } from 'radash';
 
 export class ValibotValidator {
   private childDepth = 0;
   private keyChain: string[] = [];
+
+  private valibodObject: { [key: string]: string } = {};
 
   private valibotMap: { [key: string]: any } = {};
 
@@ -40,8 +44,6 @@ export class ValibotValidator {
   }
 
   private iterateOverSchema = (data: any, key: string): any => {
-    console.log(`${this.createTabs(this.childDepth)}::${key} ${this.keyChain}`);
-
     for (const key in data) {
       this.keyChain.push(key);
       if (typeof data[key] === 'object') {
@@ -59,49 +61,77 @@ export class ValibotValidator {
     this.keyChain.pop();
   };
   //TODO: right now all fields are optional but would be better to get this form the code
-  private convertObjectToValibotString = (obj: any) => {
-    console.log('obje', obj);
-    let output = 'v.optional(v.object({';
+  private propListItemToValibotString = (obj: PropertyListItem, indentName: string) => {
+    let output = `${!obj.required ? 'v.optional(' : ''}v.${obj.type}()${!obj.required ? ')' : ''}`;
+    return output;
+  };
 
-    Object.keys(obj).forEach((key, idx) => {
-      if (idx < Object.keys(obj).length - 1) {
-        output += `${key}: ${obj[key]},`.replace(',,', ','); //with comma
+  private valibotListToObject = (list: any) => {
+    let data = `v.object({`;
+    Object.keys(list).forEach((key, idx) => {
+      const item = list[key];
+      if (idx < Object.keys(list).length - 1) {
+        data += `${key}: ${this.createTabs(2)} ${item},\n`;
       } else {
-        output += `${key}: ${obj[key]}`;
+        data += `${key}: ${this.createTabs(2)} ${item}\n`;
       }
     });
 
-    return output + '}))';
+    data += '})';
+
+    return data;
   };
 
-  private recursiveValibotCreator = (data: any) => {
-    console.log('data', data);
+  private recursiveValibotCreator = (
+    data: any,
+    indentName: string,
+  ): { last: boolean; obj: string | undefined } => {
+    // this.valibodObject[indentName] = output;
+    const valibotList: any = {};
+
     for (let i = 0; i < Object.keys(data).length; i++) {
       const key = Object.keys(data)[i];
 
-      if (data?.[key].type) {
-        if (i < Object.keys(data).length - 1) {
-          data[key] = `v.optional(v.${data?.[key].type}()),`.replace(',,', ',');
-        } else {
-          data[key] = `v.optional(v.${data?.[key].type}())`;
+      if (typeof data[key] === 'object') {
+        //its not a finals PropertyListItem so we can go to the next
+        const tmpName = indentName.length ? indentName + '.' : '';
+        const ret = this.recursiveValibotCreator(data[key], tmpName + key);
+        if (ret.obj) {
+          valibotList[key] = ret.obj;
+          console.log('valibo List Update 1 ', key, valibotList[key]);
+        } else if (ret.last) {
+          valibotList[key] = this.propListItemToValibotString(data[key], tmpName + key);
+          console.log('valibo List Update 2 ', key, valibotList[key]);
         }
+
+        //we have found a prp item convert it into valibot code string
+        // const obj = data[key] as PropertyListItem;
+
+        //
       } else {
-        const ret = this.recursiveValibotCreator(data[key]);
-        data[key] = ret;
+        //we reached a native type so we can start processing but we have to go one iteration backwards
+        return { obj: undefined, last: true };
       }
     }
 
-    const tmp = this.convertObjectToValibotString(data);
+    this.valibodObject[indentName] = this.valibotListToObject(valibotList);
 
-    return tmp;
+    return { last: false, obj: this.valibodObject[indentName] };
+
+    // const tmp = this.convertObjectToValibotString(data);
+
+    // return tmp;
   };
 
-  addValibotItem = (rawSchemaRequest: any, uuid: string) => {
-    const typesOnly = this.removeUnwantedKeys(rawSchemaRequest, 'type');
-    const valibot = this.recursiveValibotCreator(typesOnly['Request']);
-    this.valibotMap[uuid] = valibot;
+  addValibotItem = (typeConfig: PropertyList, uuid: string) => {
+    // console.log(JSON.stringify(construct(typeConfig), null, 2));
+    console.log(typeConfig);
 
-    // console.log('valibot object', valibot);
+    const constructedConfig = Object.values(construct(typeConfig))[0];
+
+    const valibot = this.recursiveValibotCreator(constructedConfig, '');
+    this.valibotMap[uuid + '_valibot'] = valibot.obj;
+
     return;
   };
 
@@ -118,11 +148,11 @@ export class ValibotValidator {
 
   private toString = () => {
     return Object.keys(this.valibotMap).map((key) => {
-      return `${key}: ${this.valibotMap[key]}\n`;
+      return `${key}: ${this.valibotMap[key]}`;
     });
   };
 
-  getTypeScript = async () => {
+  generate = async () => {
     const valibotMustacheTemp = this.readMustacheTemplate('routeTypes');
 
     const data = Mustache.render(valibotMustacheTemp, {
@@ -136,6 +166,8 @@ export class ValibotValidator {
       printWidth: 80,
       tabWidth: 2,
     });
+
+    console.log(formattedTemplate);
     return formattedTemplate;
   };
 }

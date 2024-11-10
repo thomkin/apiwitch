@@ -1,5 +1,13 @@
-import { ApiWitchRouteExport, ApiWitchRouteMeta, IterReturn } from './types';
-import { commentParser, mergeInputSelect } from './utils';
+import {
+  ApiWitchRouteExport,
+  ApiWitchRouteMeta,
+  IterReturn,
+  ProcessTypeResult,
+  PropertyList,
+  TransformResult,
+  TypeConfig,
+} from './types';
+import { parseTypeCommentConfig, removeTypeScriptComments } from './utils';
 import { logger, ErrorCode } from './logger';
 import { AutoGenMethodData } from '../types';
 import { cliConfig } from './index';
@@ -16,20 +24,22 @@ import {
   SyntaxKind,
   VariableDeclaration,
 } from 'ts-morph';
+import { AstParser } from './ast';
 
-const extractInlineCommentByPropName = (
-  typeString: string,
-  propName: string,
-): string | undefined => {
-  const dataArr = typeString.split('\n');
+const isOptional = (typeString: string, propName: string): { isOptional: boolean } | undefined => {
+  const codeOnly = removeTypeScriptComments(typeString);
+  const dataArr = codeOnly.split('\n');
 
   for (let i = 0; i < dataArr.length; i++) {
     const line = dataArr[i];
 
-    const [codePart, commentPart] = line.split('//');
-    const _propName = codePart.split(':')[0].trim();
+    let _propName = line.split(':')[0].trim();
+
+    const isOptional = _propName.includes('?');
+    _propName = _propName.replace(/\?/g, '');
+
     if (_propName === propName) {
-      return commentPart;
+      return { isOptional };
     }
 
     continue;
@@ -43,6 +53,7 @@ const iterateOverProps = (
   typeDeclaration: TypeAliasDeclaration | InterfaceDeclaration,
   topName: string,
   typeChecker: TypeChecker,
+  indentLevel: number,
 ): IterReturn | null => {
   const paramList: any[] = [];
 
@@ -52,38 +63,53 @@ const iterateOverProps = (
     const propType = typeChecker.getTypeOfSymbolAtLocation(prop, typeDeclaration);
     const isNative = isNativeType(propType.getText());
 
+    // constructTypesFromAst(typeDeclaration, 0);
+
+    // console.log('Prop Type --------', propType.getProperties()[0].get);
+
     if (!isNative) {
       const _propType = propType.getProperties();
-      const ret = iterateOverProps(_propType, typeDeclaration, propName, typeChecker);
+      const ret = iterateOverProps(
+        _propType,
+        typeDeclaration,
+        propName,
+        typeChecker,
+        indentLevel + 1,
+      );
 
       ret && paramList.push(ret);
       return;
     }
 
-    const value = {} as any;
-    const comment = extractInlineCommentByPropName(typeDeclaration.getText(), propName);
-    const inputSelect = commentParser(comment || '', propName);
+    //if we come here it means we reached the end of the child branch
 
-    value[propName] = {
-      type: propType.getText(),
-      comment,
-      inputSelect,
-    };
+    const value = {} as IterReturn;
+    const optional = isOptional(typeDeclaration.getText(), propName);
+    // const inputSelect = createSourceSelectLists(tmp?.comment || '', propName);
+
+    // value[propName] = { type: propType.getText(), required: !optional };
     paramList.push(value);
   });
 
   //Merge the parameters of this child and return
-  const merged = {} as any;
-  merged[topName] = {};
+  const merged: IterReturn = {};
 
-  paramList.forEach((p) => {
-    const comment = extractInlineCommentByPropName(typeDeclaration.getText(), topName);
-    if (comment) {
-      const inputSelect = commentParser(comment || '', topName);
-      merged[topName] = { ...merged[topName], ...p, comment: comment, inputSelect };
-    } else {
-      merged[topName] = { ...merged[topName], ...p };
-    }
+  //@ts-ignore
+  merged[topName] = {} as IterReturn;
+
+  paramList.forEach((item) => {
+    merged[topName] = { ...merged[topName], ...item };
+    // const comment = splitCodeAndComments(typeDeclaration.getText(), topName, indentLevel);
+    // if (comment) {
+    //   // const inputSelect = createSourceSelectLists(comment.comment || '', topName);
+    //   merged[topName] = {
+    //     ...merged[topName],
+    //     ...p,
+    //     // comment: comment,
+    //     // inputSelect,
+    //   };
+    // } else {
+    // }
   });
 
   return merged;
@@ -92,19 +118,51 @@ const iterateOverProps = (
 const processTypeOrInterface = (
   typeDeclaration: TypeAliasDeclaration | InterfaceDeclaration | undefined,
   typeChecker: TypeChecker,
-): IterReturn | undefined | null => {
-  if (!typeDeclaration) {
-    return;
+  keyPrepend: string,
+): ProcessTypeResult | undefined | null => {
+  if (typeDeclaration) {
+    const astParser = new AstParser();
+    const typeConfigArr = parseTypeCommentConfig(typeDeclaration.getText(), keyPrepend);
+
+    const typeConfig: TypeConfig = {};
+
+    typeConfigArr?.forEach((cfg, idx) => {
+      typeConfig[cfg.key] = {
+        inputSource: typeConfigArr[idx].inputSource,
+        pipe: typeConfigArr[idx].pipe,
+        sourceList: typeConfigArr[idx].sourceList,
+      };
+    });
+
+    return {
+      propertyList: astParser.getSchemaFromTypeDeclaration(typeDeclaration),
+      typeConfig: typeConfig,
+    };
   }
+  return;
 
-  const tsType = typeChecker.getTypeAtLocation(typeDeclaration);
-  const propList = tsType.getProperties();
+  // const tsType = typeChecker.getTypeAtLocation(typeDeclaration);
+  // const propList = tsType.getProperties();
 
-  const result: IterReturn = {};
-  result[typeDeclaration.getName()] = {};
-  const ret = iterateOverProps(propList, typeDeclaration, typeDeclaration.getName(), typeChecker);
+  // const result: IterReturn = {};
 
-  return ret;
+  // //@ts-ignore
+  // result[typeDeclaration.getName()] = {};
+
+  // const ret = iterateOverProps(
+  //   propList,
+  //   typeDeclaration,
+  //   typeDeclaration.getName(),
+  //   typeChecker,
+  //   0,
+  // );
+
+  // const typeConfig = parseTypeCommentConfig(typeDeclaration.getText());
+
+  // return {
+  //   typeConfig: typeConfig || [],
+  //   typeObject: ret || {},
+  // };
 };
 
 const apiWitchRouteMetaData = (
@@ -190,7 +248,7 @@ const findApiWitchExportedRoutes = (src: SourceFile): ApiWitchRouteExport | unde
   return;
 };
 
-export const startTransform = (file: string): AutoGenMethodData | undefined => {
+export const startTransform = (file: string): TransformResult | undefined => {
   const project = new Project();
 
   const src = project.addSourceFileAtPath(file);
@@ -255,8 +313,13 @@ export const startTransform = (file: string): AutoGenMethodData | undefined => {
    * we have to create the JSON schema that can be used for verification and
    * for automatic client generation
    */
-  const rawSchemaRequest = processTypeOrInterface(interfaceRequest || typeRequest, typeChecker);
-  if (!rawSchemaRequest) {
+
+  const requestData = processTypeOrInterface(
+    interfaceRequest || typeRequest,
+    typeChecker,
+    'request.',
+  );
+  if (!requestData) {
     logger.error(
       ErrorCode.RequestRawSchemaFailed,
       `Could not process Request [type | interface] in route ${src.getSourceFile()}`,
@@ -264,8 +327,12 @@ export const startTransform = (file: string): AutoGenMethodData | undefined => {
     return;
   }
 
-  const rawSchemaResponse = processTypeOrInterface(interfaceResponse || typeResponse, typeChecker);
-  if (!rawSchemaResponse) {
+  const responseData = processTypeOrInterface(
+    interfaceResponse || typeResponse,
+    typeChecker,
+    'response.',
+  );
+  if (!responseData) {
     logger.error(
       ErrorCode.ResponseRawSchemaFailed,
       `Could not process Response [type | interface] in route ${src.getSourceFile()}`,
@@ -273,7 +340,9 @@ export const startTransform = (file: string): AutoGenMethodData | undefined => {
     return;
   }
 
-  const inputSelect = mergeInputSelect(rawSchemaRequest);
+  return { request: requestData, response: responseData, config: apiWitchRouteExport };
+
+  // const inputSelect = mergeInputSelect(rawSchemaRequest);
 
   /**
    * Now let us put everything together, create of type MethodHandler
@@ -281,21 +350,22 @@ export const startTransform = (file: string): AutoGenMethodData | undefined => {
    * is done ! Yeah! Hex Hex!
    */
 
-  return {
-    importPath: apiWitchRouteExport.srcPath,
-    callback: apiWitchRouteExport.meta.variableName,
-    path: apiWitchRouteExport.meta.path,
-    method: apiWitchRouteExport.meta.method,
-    bodySelect: inputSelect.body,
-    headerSelect: inputSelect.header,
-    paramSelect: inputSelect.params,
-    querySelect: inputSelect.query,
-    bestEffortSelect: inputSelect.bestEffort,
-    auth: apiWitchRouteExport.meta.auth,
-    requestTypeString: (interfaceRequest || typeRequest)?.getText(),
-    responseTypeString: (interfaceResponse || typeResponse)?.getText(),
-    rawSchemaRequest: rawSchemaRequest,
-  } as AutoGenMethodData;
+  //TODO: this needs to be fixed!!!!!
+  // return {
+  //   importPath: apiWitchRouteExport.srcPath,
+  //   callback: apiWitchRouteExport.meta.variableName,
+  //   path: apiWitchRouteExport.meta.path,
+  //   method: apiWitchRouteExport.meta.method,
+  //   bodySelect: inputSelect.body,
+  //   headerSelect: inputSelect.header,
+  //   paramSelect: inputSelect.params,
+  //   querySelect: inputSelect.query,
+  //   bestEffortSelect: inputSelect.bestEffort,
+  //   auth: apiWitchRouteExport.meta.auth,
+  //   requestTypeString: (interfaceRequest || typeRequest)?.getText(),
+  //   responseTypeString: (interfaceResponse || typeResponse)?.getText(),
+  //   rawSchemaRequest: rawSchemaRequest,
+  // } as AutoGenMethodData;
 };
 
 /**

@@ -1,4 +1,36 @@
-export type IterReturn = { [key: string]: any };
+export type IterItem = {
+  [key: string]: {
+    name?: string; //TODO: make this required !!!!
+    type: string;
+    required: boolean;
+  };
+};
+
+export type PropertyListItem = {
+  name: string;
+  type: string;
+  required: boolean;
+};
+
+export type PropertyList = {
+  [key: string]: PropertyListItem;
+};
+
+export type TypeConfig = {
+  [key: string]: {
+    inputSource: { source: InputSourceEnum; params: string | null };
+    sourceList: SourceList;
+    pipe: string[];
+  };
+};
+
+export type ParserReturn = {
+  typeObject: IterReturn;
+  typeConfig: CommentConfigItem[];
+};
+
+export type IterReturn = { [key: string]: IterItem };
+// export type IterReturn = { [key: string]: any };
 
 export type CliConfig = {
   includeDir: string;
@@ -31,3 +63,27 @@ export enum CommentInputSelect {
   params = 'params',
   body = 'body',
 }
+
+export enum InputSourceEnum {
+  header = 'header',
+  params = 'params',
+  body = 'body',
+  query = 'query',
+}
+export type CommentConfigItem = {
+  inputSource: { source: InputSourceEnum; params: string | null };
+  sourceList: SourceList;
+  pipe: string[];
+  key: string;
+};
+
+export type ProcessTypeResult = {
+  propertyList: PropertyList;
+  typeConfig: TypeConfig;
+};
+
+export type TransformResult = {
+  request: ProcessTypeResult;
+  response: ProcessTypeResult;
+  config: ApiWitchRouteExport;
+};

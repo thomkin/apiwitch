@@ -69,14 +69,15 @@ export interface AutoGenMethodData {
   callback: string;
   path: string;
   auth?: boolean | string;
-  querySelect?: string[];
-  bodySelect?: string[];
-  paramSelect?: string[];
-  headerSelect?: string[];
-  bestEffortSelect?: string[];
-  requestTypeString: string;
-  responseTypeString: string;
-  rawSchemaRequest: IterReturn;
+  querySelect: string[];
+  bodySelect: string[];
+  paramSelect: string[];
+  headerSelect: string[];
+  bestEffortSelect: string[];
+  uuid: string;
+  // requestTypeString: string;
+  // responseTypeString: string;
+  // rawSchemaRequest: IterReturn;
 }
 
 /**
