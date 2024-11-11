@@ -1,4 +1,4 @@
-import { catchError, getTypeScriptFiles, getUUID, mergeSourceLists } from './utils';
+import { catchError, getTypeScriptFiles, getUUID } from './utils';
 import { AutoGenMethodData, HttpMethods } from '../types';
 import { RouteFileGenerator } from './fileGenerator';
 import { ErrorCode, logger } from './logger';
@@ -54,7 +54,7 @@ export const run = async () => {
 
       if (res) {
         //extract the need config data to create a route
-        const sourceList = mergeSourceLists(res?.request || ({} as any));
+        // const sourceList = mergeSourceLists(res?.request || ({} as any));
         const uuid = getUUID(res?.config.srcPath, res?.config.meta.variableName);
 
         const methodDateRequest: AutoGenMethodData = {
@@ -63,19 +63,19 @@ export const run = async () => {
           path: res?.config.meta.path,
           method: res?.config.meta.method as HttpMethods,
           auth: res?.config.meta.auth,
-          bestEffortSelect: sourceList.bestEffort,
-          bodySelect: sourceList.body,
-          headerSelect: sourceList.header,
-          paramSelect: sourceList.params,
-          querySelect: sourceList.query,
+          bestEffortSelect: res.request.sourceList.bestEffort,
+          bodySelect: res.request.sourceList.body,
+          headerSelect: res.request.sourceList.header,
+          paramSelect: res.request.sourceList.params,
+          querySelect: res.request.sourceList.query,
           uuid: uuid,
         };
 
         rfg.addRoute(methodDateRequest);
 
-        //then add pass information to valibot so that it can generate the schemas
-        valibotRequest.addValibotItem(res.request.propertyList, uuid);
-        valibotResponse.addValibotItem(res.response.propertyList, uuid);
+        // then add pass information to valibot so that it can generate the schemas
+        valibotRequest.addValibotItem(res.request.schema, uuid);
+        valibotResponse.addValibotItem(res.response.schema, uuid);
       }
     });
 

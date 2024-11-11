@@ -226,7 +226,25 @@ You can either use the **type** or **interface** keywords.
 
 # TODO
 
-- [ ]Bug 001: Best effort values are not set when there is no configration in the block comment
+- [ ]Bug 001: Best effort values are not set when there is no configuration in the block comment
+  The problem is this: In the parseTypeCommentConfig we are creating the list for body, query, params, header select
+  but here we do not have the data of who is not theres
+
+AST is getting type data and we need to iterate through the list of all types we have found
+remove the inputs that have ben already added to some of the arrays and we will be left
+with a list of best effort.
+
+We can also create an object of the reqeust itterate over all the keys and check
+if they are not in any list we push them into best effort.
+
+AST output is used to the type definition, the schema, the string parse is used to get
+the configuration from the commmetns. CAn we not add the parseTypeCOmmentConfig to the ast class?
+
+We are calling the astPArser.getSCheamFromTypeDEclration function which returns
+the propery list -> is he schema.
+
+So when we return this list we can also return the SourceList
+
 - [ ] Features 002: add the creation of different files for schema for request and response objects
 
 //TODO: an empty Request does not work !!! that needs to change!!!

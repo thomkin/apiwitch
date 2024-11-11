@@ -12,11 +12,22 @@ export const handleBestEffort = (input: {
   headers: { [key: string]: any };
   body: { [key: string]: any };
   params: { [key: string]: any };
-  mode: BestEffortMode;
+  // mode: BestEffortMode;
   handler: MethodHandler;
 }): any => {
   let output: { [key: string]: any } = {};
-  const mode = input.mode;
+  const mode =
+    input.handler.method === 'get'
+      ? BestEffortMode.ParamQuery
+      : input.handler.method === 'post'
+        ? BestEffortMode.ParamBody
+        : input.handler.method === 'patch'
+          ? BestEffortMode.ParamQueryBody
+          : input.handler.method === 'delete'
+            ? BestEffortMode.ParamQuery
+            : BestEffortMode.ParamQueryBody;
+  console.log('input body: ', input.body);
+  console.log('bestEffortSelect: ', input.handler.bestEffortSelect);
   for (let i = 0; i < mode.length; i++) {
     const char = mode[i];
     switch (char) {
@@ -34,6 +45,9 @@ export const handleBestEffort = (input: {
         break;
     }
   }
+
+  console.log('output', output);
+
   return construct(output);
 };
 
@@ -62,16 +76,6 @@ export const handleCommentInputSelect = (input: {
     headers: input.headers,
     params: input.params,
     query: input.query,
-    mode:
-      input.handler.method === 'get'
-        ? BestEffortMode.ParamQuery
-        : input.handler.method === 'post'
-          ? BestEffortMode.ParamBody
-          : input.handler.method === 'patch'
-            ? BestEffortMode.ParamQueryBody
-            : input.handler.method === 'delete'
-              ? BestEffortMode.ParamQuery
-              : BestEffortMode.ParamQueryBody,
   });
 
   constructData(input.body, input?.handler?.bodySelect || [], output);

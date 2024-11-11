@@ -1,4 +1,4 @@
-import { isNativeType, parseTypeCommentConfig } from './utils';
+import { isNativeType } from './utils';
 import { logger, ErrorCode } from './logger';
 import { cliConfig } from './index';
 import { AstParser } from './ast';
@@ -8,8 +8,10 @@ import path from 'path';
 import {
   ApiWitchRouteExport,
   ApiWitchRouteMeta,
+  InputSourceEnum,
   IterReturn,
   ProcessTypeResult,
+  SourceList,
   TransformResult,
   TypeConfig,
 } from './types';
@@ -78,21 +80,56 @@ const processTypeOrInterface = (
 ): ProcessTypeResult | undefined | null => {
   if (typeDeclaration) {
     const astParser = new AstParser();
-    const typeConfigArr = parseTypeCommentConfig(typeDeclaration.getText(), keyPrepend);
+
+    //Type configuration contains meta information encoded in the block comment of the type
+    const typeConfigArr = astParser.parseTypeConfigFromComment(typeDeclaration, keyPrepend);
+
+    //This object contains a schema for all properties defined on the type
+    const schema = astParser.getSchemaFromTypeDeclaration(typeDeclaration, keyPrepend);
+
+    // const typeConfigArr = parseTypeCommentConfig(typeDeclaration.getText(), keyPrepend);
+    console.log(`Type config array for ${keyPrepend}`, typeConfigArr);
 
     const typeConfig: TypeConfig = {};
 
-    typeConfigArr?.forEach((cfg, idx) => {
-      typeConfig[cfg.key] = {
+    typeConfigArr?.forEach((tc, idx) => {
+      typeConfig[tc.key] = {
+        key: tc.key,
         inputSource: typeConfigArr[idx].inputSource,
         pipe: typeConfigArr[idx].pipe,
-        sourceList: typeConfigArr[idx].sourceList,
       };
     });
 
+    const sourceList: SourceList = {
+      bestEffort: [],
+      body: [],
+      header: [],
+      params: [],
+      query: [],
+    };
+
+    //The schema contains a proper list of all variable names. We should use that
+    //iterate over it and find the corresponding
+    Object.keys(schema).forEach((key) => {
+      const cfg = typeConfigArr?.find((cfg) => cfg.key === key);
+
+      if (cfg) {
+        sourceList[cfg.inputSource.source].push(cfg.inputSource.id);
+      } else {
+        //stip the top level name --> nmame of the type itself (request / response)
+        const newKey = key.replace(keyPrepend, '').replace(/^\./, '');
+        sourceList.bestEffort.push(newKey);
+      }
+
+      // schema[key].name;
+
+      console.log(`Schema for ${key}`, schema[key]);
+    });
+
     return {
-      propertyList: astParser.getSchemaFromTypeDeclaration(typeDeclaration),
+      schema: schema,
       typeConfig: typeConfig,
+      sourceList: sourceList,
     };
   }
   return;
@@ -248,7 +285,7 @@ export const startTransform = (file: string): TransformResult | undefined => {
    * for automatic client generation
    */
 
-  const requestData = processTypeOrInterface(interfaceRequest || typeRequest, 'request.');
+  const requestData = processTypeOrInterface(interfaceRequest || typeRequest, 'request');
   if (!requestData) {
     logger.error(
       ErrorCode.RequestRawSchemaFailed,
@@ -257,7 +294,7 @@ export const startTransform = (file: string): TransformResult | undefined => {
     return;
   }
 
-  const responseData = processTypeOrInterface(interfaceResponse || typeResponse, 'response.');
+  const responseData = processTypeOrInterface(interfaceResponse || typeResponse, 'response');
   if (!responseData) {
     logger.error(
       ErrorCode.ResponseRawSchemaFailed,

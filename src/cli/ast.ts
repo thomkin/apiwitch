@@ -1,9 +1,10 @@
 import { InterfaceDeclaration, Node, SyntaxKind, TypeAliasDeclaration } from 'ts-morph';
-import { IterItem, PropertyList } from './types';
+import { InputSourceEnum, Schema, SourceList, TypeConfigItem } from './types';
 
 export class AstParser {
-  private propertyList: PropertyList = {};
-  private getTypesRecursively = (node: Node, indentName: string): IterItem | undefined => {
+  private propertyList: Schema = {};
+
+  private getTypesRecursively = (node: Node, indentName: string): undefined => {
     const typeLiterals = node.getFirstChildByKind(SyntaxKind.TypeLiteral);
 
     if (!typeLiterals) {
@@ -30,7 +31,7 @@ export class AstParser {
         this.getTypesRecursively(property, indentName + '.' + name);
 
         if (question) {
-          const override: PropertyList = {};
+          const override: Schema = {};
           Object.keys(this.propertyList).forEach((key) => {
             if (key.startsWith(indentName + '.' + name)) {
               const tmpKey = key
@@ -58,10 +59,136 @@ export class AstParser {
     });
   };
 
+  private getSourceList = (sourceName: string, name: string, parameters: string): SourceList => {
+    //We need to strip the first element from the name as it refers to the type name in TS code which is not
+    //needed for further processing
+    const nameParts = name.split('.');
+    if (nameParts.length > 1) {
+      name = nameParts.slice(1).join('.');
+    }
+
+    switch (sourceName) {
+      case 'header':
+        return {
+          body: [],
+          params: [],
+          header: [name + ' ' + parameters],
+          query: [],
+          bestEffort: [],
+        };
+
+      case 'query':
+        return {
+          body: [],
+          params: [],
+          header: [],
+          query: [name],
+          bestEffort: [],
+        };
+
+      case 'params':
+        return {
+          body: [],
+          params: [name],
+          header: [],
+          query: [],
+          bestEffort: [],
+        };
+
+      case 'body':
+        return {
+          body: [name],
+          params: [],
+          header: [],
+          query: [],
+          bestEffort: [],
+        };
+
+      default:
+    }
+
+    return {
+      body: [],
+      params: [],
+      header: [],
+      query: [],
+      bestEffort: [name],
+    };
+  };
+
+  private extractInputSource = (
+    text: string,
+  ): { inputSource: string; cleanText: string; params: string } => {
+    const regex = /@(header|query|body|params)(?:\(([^)]*)\))?/;
+    const match = text.match(regex);
+    const name = match && match[2] ? match[1] : match ? match[1] : null;
+
+    const params = match && match[2] ? match[2].split(',').map((val) => val.trim()) : [];
+
+    const cleanText = match ? text.replace(regex, '') : text;
+    return { inputSource: name || '', cleanText, params: params.join(' ') };
+  };
+
+  private extractKeyName = (text: string) => {
+    const parts = text.split('::');
+    return parts[0].trim();
+  };
+
+  private getOptionsFromComment = (comment: string): string[] => {
+    const regex = /\{([^}]+)\}/g;
+    const matches = [];
+    let match;
+    while ((match = regex.exec(comment))) {
+      matches.push(match[1]);
+    }
+    return matches;
+  };
+
+  parseTypeConfigFromComment = (
+    typeDeclaration: TypeAliasDeclaration | InterfaceDeclaration,
+    keyPrepend: string,
+  ): TypeConfigItem[] | undefined => {
+    const blockCommentRegex = /\/\*\*([\s\S]*?)\*\//;
+    const match = typeDeclaration.getText().match(blockCommentRegex);
+
+    if (match) {
+      const tmp = match[1].replace(/\*/g, '');
+      const tmpList = tmp.split('\n').filter((line) => {
+        return !line.trim().startsWith('//') && line.trim().length > 0;
+      });
+
+      return tmpList.map((line) => {
+        const { cleanText, inputSource, params } = this.extractInputSource(line);
+        const nameOfKey = keyPrepend + '.' + this.extractKeyName(line);
+        const pipe = this.getOptionsFromComment(cleanText);
+
+        console.log(`name of key is ${nameOfKey}`);
+
+        const ret: TypeConfigItem = {
+          inputSource: {
+            params,
+            source: inputSource as InputSourceEnum,
+            id: this.extractKeyName(line),
+          },
+          // sourceList: this.getSourceList(inputSource, nameOfKey, params),
+          pipe: pipe,
+          key: nameOfKey,
+        };
+
+        return ret;
+      });
+    }
+
+    return;
+  };
+
   getSchemaFromTypeDeclaration = (
     typeDeclaration: TypeAliasDeclaration | InterfaceDeclaration,
-  ): PropertyList => {
-    this.getTypesRecursively(typeDeclaration, 'request');
+    keyPrepend: string,
+  ): Schema => {
+    this.getTypesRecursively(typeDeclaration, keyPrepend);
+    // const typeConfigList = this.parseTypeConfigFromComment(typeDeclaration, keyPrepend);
+
     return this.propertyList;
   };
 }

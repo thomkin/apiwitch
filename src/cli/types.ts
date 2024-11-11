@@ -1,3 +1,5 @@
+//TODO: check that we can remove ths it seems redudnate
+// to property list
 export type IterItem = {
   [key: string]: {
     name?: string; //TODO: make this required !!!!
@@ -6,29 +8,32 @@ export type IterItem = {
   };
 };
 
-export type PropertyListItem = {
+export type SchemaItem = {
   name: string;
   type: string;
   required: boolean;
   ignore?: boolean;
 };
 
-export type PropertyList = {
-  [key: string]: PropertyListItem;
+export type Schema = {
+  [key: string]: SchemaItem;
 };
 
 export type TypeConfig = {
-  [key: string]: {
-    inputSource: { source: InputSourceEnum; params: string | null };
-    sourceList: SourceList;
-    pipe: string[];
-  };
+  [key: string]: TypeConfigItem;
 };
 
-export type ParserReturn = {
-  typeObject: IterReturn;
-  typeConfig: CommentConfigItem[];
+export type TypeConfigItem = {
+  inputSource: { source: InputSourceEnum; params: string | null; id: string };
+  // sourceList: SourceList;
+  pipe: string[];
+  key: string;
 };
+
+// export type ParserReturn = {
+//   typeObject: IterReturn;
+//   typeConfig: TypeConfigItem[];
+// };
 
 export type IterReturn = { [key: string]: IterItem };
 
@@ -71,16 +76,10 @@ export enum InputSourceEnum {
   query = 'query',
 }
 
-export type CommentConfigItem = {
-  inputSource: { source: InputSourceEnum; params: string | null };
-  sourceList: SourceList;
-  pipe: string[];
-  key: string;
-};
-
 export type ProcessTypeResult = {
-  propertyList: PropertyList;
+  schema: Schema;
   typeConfig: TypeConfig;
+  sourceList: SourceList;
 };
 
 export type TransformResult = {

@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { CommentConfigItem, InputSourceEnum, ProcessTypeResult, SourceList } from './types';
+import { TypeConfigItem, InputSourceEnum, ProcessTypeResult, SourceList } from './types';
 import { CommentInputSelect, IterReturn } from './types';
 import { logger } from './logger';
 import { InterfaceDeclaration, SyntaxKind, TypeAliasDeclaration } from 'ts-morph';
@@ -116,62 +116,62 @@ export const mergeInputSelect = (rawSchema: IterReturn) => {
  * @param parameters - the parameters that should be appended to the name
  * @returns a SourceList object
  */
-const getSourceList = (sourceName: string, name: string, parameters: string): SourceList => {
-  //We need to strip the first element from the name as it refers to the type name in TS code which is not
-  //needed for further processing
-  const nameParts = name.split('.');
-  if (nameParts.length > 1) {
-    name = nameParts.slice(1).join('.');
-  }
+// const getSourceList = (sourceName: string, name: string, parameters: string): SourceList => {
+//   //We need to strip the first element from the name as it refers to the type name in TS code which is not
+//   //needed for further processing
+//   const nameParts = name.split('.');
+//   if (nameParts.length > 1) {
+//     name = nameParts.slice(1).join('.');
+//   }
 
-  switch (sourceName) {
-    case 'header':
-      return {
-        body: [],
-        params: [],
-        header: [name + ' ' + parameters],
-        query: [],
-        bestEffort: [],
-      };
+//   switch (sourceName) {
+//     case 'header':
+//       return {
+//         body: [],
+//         params: [],
+//         header: [name + ' ' + parameters],
+//         query: [],
+//         bestEffort: [],
+//       };
 
-    case 'query':
-      return {
-        body: [],
-        params: [],
-        header: [],
-        query: [name],
-        bestEffort: [],
-      };
+//     case 'query':
+//       return {
+//         body: [],
+//         params: [],
+//         header: [],
+//         query: [name],
+//         bestEffort: [],
+//       };
 
-    case 'params':
-      return {
-        body: [],
-        params: [name],
-        header: [],
-        query: [],
-        bestEffort: [],
-      };
+//     case 'params':
+//       return {
+//         body: [],
+//         params: [name],
+//         header: [],
+//         query: [],
+//         bestEffort: [],
+//       };
 
-    case 'body':
-      return {
-        body: [name],
-        params: [],
-        header: [],
-        query: [],
-        bestEffort: [],
-      };
+//     case 'body':
+//       return {
+//         body: [name],
+//         params: [],
+//         header: [],
+//         query: [],
+//         bestEffort: [],
+//       };
 
-    default:
-  }
+//     default:
+//   }
 
-  return {
-    body: [],
-    params: [],
-    header: [],
-    query: [],
-    bestEffort: [name],
-  };
-};
+//   return {
+//     body: [],
+//     params: [],
+//     header: [],
+//     query: [],
+//     bestEffort: [name],
+//   };
+// };
 
 /**
  * Takes a string and returns an object with 3 properties:
@@ -181,18 +181,18 @@ const getSourceList = (sourceName: string, name: string, parameters: string): So
  * @param text the text to extract the input source from
  * @returns an object with the input source, the clean text, and the parameters
  */
-const extractInputSource = (
-  text: string,
-): { inputSource: string; cleanText: string; params: string } => {
-  const regex = /@(header|query|body|params)(?:\(([^)]*)\))?/;
-  const match = text.match(regex);
-  const name = match && match[2] ? match[1] : match ? match[1] : null;
+// const extractInputSource = (
+//   text: string,
+// ): { inputSource: string; cleanText: string; params: string } => {
+//   const regex = /@(header|query|body|params)(?:\(([^)]*)\))?/;
+//   const match = text.match(regex);
+//   const name = match && match[2] ? match[1] : match ? match[1] : null;
 
-  const params = match && match[2] ? match[2].split(',').map((val) => val.trim()) : [];
+//   const params = match && match[2] ? match[2].split(',').map((val) => val.trim()) : [];
 
-  const cleanText = match ? text.replace(regex, '') : text;
-  return { inputSource: name || '', cleanText, params: params.join(' ') };
-};
+//   const cleanText = match ? text.replace(regex, '') : text;
+//   return { inputSource: name || '', cleanText, params: params.join(' ') };
+// };
 
 /**
  * Takes a string and returns the first part of it, trimmed.
@@ -200,10 +200,10 @@ const extractInputSource = (
  * @param text the string to split
  * @returns the first part of the string, trimmed
  */
-const extractKeyName = (text: string) => {
-  const parts = text.split('::');
-  return parts[0].trim();
-};
+// const extractKeyName = (text: string) => {
+//   const parts = text.split('::');
+//   return parts[0].trim();
+// };
 
 /**
  * Extracts options from a comment string.
@@ -214,15 +214,15 @@ const extractKeyName = (text: string) => {
  * @param comment - The comment string containing options in curly braces.
  * @returns An array of options extracted from the comment.
  */
-const getOptionsFromComment = (comment: string): string[] => {
-  const regex = /\{([^}]+)\}/g;
-  const matches = [];
-  let match;
-  while ((match = regex.exec(comment))) {
-    matches.push(match[1]);
-  }
-  return matches;
-};
+// const getOptionsFromComment = (comment: string): string[] => {
+//   const regex = /\{([^}]+)\}/g;
+//   const matches = [];
+//   let match;
+//   while ((match = regex.exec(comment))) {
+//     matches.push(match[1]);
+//   }
+//   return matches;
+// };
 
 /**
  * This function takes a string and a keyPrepend and returns an array of CommentConfigItems.
@@ -235,35 +235,35 @@ const getOptionsFromComment = (comment: string): string[] => {
  * @param keyPrepend the string to add to the beginning of each key
  * @returns an array of CommentConfigItems or undefined
  */
-export const parseTypeCommentConfig = (
-  text: string,
-  keyPrepend: string,
-): CommentConfigItem[] | undefined => {
-  const blockCommentRegex = /\/\*\*([\s\S]*?)\*\//;
-  const match = text.match(blockCommentRegex);
+// export const parseTypeCommentConfig = (
+//   text: string,
+//   keyPrepend: string,
+// ): CommentConfigItem[] | undefined => {
+//   const blockCommentRegex = /\/\*\*([\s\S]*?)\*\//;
+//   const match = text.match(blockCommentRegex);
 
-  if (match) {
-    const tmp = match[1].replace(/\*/g, '');
-    const tmpList = tmp.split('\n').filter((line) => line.trim().length > 0);
+//   if (match) {
+//     const tmp = match[1].replace(/\*/g, '');
+//     const tmpList = tmp.split('\n').filter((line) => line.trim().length > 0);
 
-    return tmpList.map((line) => {
-      const { cleanText, inputSource, params } = extractInputSource(line);
-      const nameOfKey = keyPrepend + extractKeyName(line);
-      const pipe = getOptionsFromComment(cleanText);
+//     return tmpList.map((line) => {
+//       const { cleanText, inputSource, params } = extractInputSource(line);
+//       const nameOfKey = keyPrepend + extractKeyName(line);
+//       const pipe = getOptionsFromComment(cleanText);
 
-      const ret: CommentConfigItem = {
-        inputSource: { params, source: inputSource as InputSourceEnum },
-        sourceList: getSourceList(inputSource, nameOfKey, params),
-        pipe: pipe,
-        key: nameOfKey,
-      };
+//       const ret: CommentConfigItem = {
+//         inputSource: { params, source: inputSource as InputSourceEnum },
+//         sourceList: getSourceList(inputSource, nameOfKey, params),
+//         pipe: pipe,
+//         key: nameOfKey,
+//       };
 
-      return ret;
-    });
-  }
+//       return ret;
+//     });
+//   }
 
-  return;
-};
+//   return;
+// };
 
 /**
  * This function takes a ProcessTypeResult and merges all the source lists together.
@@ -272,33 +272,33 @@ export const parseTypeCommentConfig = (
  * @param data - The data object with the typeConfig as a property
  * @returns A single SourceList with all the merged data.
  */
-export const mergeSourceLists = (data: ProcessTypeResult) => {
-  let finalSrcList = {
-    body: [],
-    params: [],
-    header: [],
-    query: [],
-    bestEffort: [],
-  } as SourceList;
+// export const mergeSourceLists = (data: ProcessTypeResult) => {
+//   let finalSrcList = {
+//     body: [],
+//     params: [],
+//     header: [],
+//     query: [],
+//     bestEffort: [],
+//   } as SourceList;
 
-  if (!data.typeConfig) {
-    return finalSrcList;
-  }
+//   if (!data.typeConfig) {
+//     return finalSrcList;
+//   }
 
-  Object.keys(data.typeConfig).forEach((key) => {
-    finalSrcList.bestEffort = [
-      ...finalSrcList.bestEffort,
-      ...data.typeConfig[key].sourceList.bestEffort,
-    ];
+//   Object.keys(data.typeConfig).forEach((key) => {
+//     finalSrcList.bestEffort = [
+//       ...finalSrcList.bestEffort,
+//       ...data.typeConfig[key].sourceList.bestEffort,
+//     ];
 
-    finalSrcList.body = [...finalSrcList.body, ...data.typeConfig[key].sourceList.body];
-    finalSrcList.header = [...finalSrcList.header, ...data.typeConfig[key].sourceList.header];
-    finalSrcList.params = [...finalSrcList.params, ...data.typeConfig[key].sourceList.params];
-    finalSrcList.query = [...finalSrcList.query, ...data.typeConfig[key].sourceList.query];
-  });
+//     finalSrcList.body = [...finalSrcList.body, ...data.typeConfig[key].sourceList.body];
+//     finalSrcList.header = [...finalSrcList.header, ...data.typeConfig[key].sourceList.header];
+//     finalSrcList.params = [...finalSrcList.params, ...data.typeConfig[key].sourceList.params];
+//     finalSrcList.query = [...finalSrcList.query, ...data.typeConfig[key].sourceList.query];
+//   });
 
-  return finalSrcList;
-};
+//   return finalSrcList;
+// };
 export const getUUID = (importPath: string, callback: string) => {
   return (
     importPath.replace(/\//g, '_').replace(/\\/g, '_').replace(/\s+/g, '_').replace(/\./g, '_') +

@@ -1,4 +1,4 @@
-import { PropertyList, PropertyListItem } from './types';
+import { Schema, SchemaItem } from './types';
 import { construct } from 'radash';
 import { cliConfig } from '.';
 
@@ -68,7 +68,7 @@ export class ValibotValidator {
     this.keyChain.pop();
   };
 
-  private propListItemToValibotString = (obj: PropertyListItem) => {
+  private propListItemToValibotString = (obj: SchemaItem) => {
     let output = `${!obj.required ? 'v.optional(' : ''}v.${obj.type}()${!obj.required ? ')' : ''}`;
     return output;
   };
@@ -121,7 +121,7 @@ export class ValibotValidator {
     return { last: false, obj: this.valibodObject[indentName] };
   };
 
-  addValibotItem = (typeConfig: PropertyList, uuid: string) => {
+  addValibotItem = (typeConfig: Schema, uuid: string) => {
     //Remove the top level entry of the list which is either request / response
 
     const constructedConfig = Object.values(construct(typeConfig))[0];
