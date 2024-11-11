@@ -9,6 +9,9 @@ export const routeRequestValidation = (input: {
 }): { error: any; data: any } => {
   //Then validate the inputs
   const requestSchema = input.witchcraftSchemas[input.uuid + '_valibot_request'];
+  if (!requestSchema) {
+    return { data: {}, error: undefined };
+  }
 
   try {
     const tmp = v.parse(requestSchema, input.request);

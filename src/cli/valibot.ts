@@ -95,7 +95,7 @@ export class ValibotValidator {
   ): { last: boolean; obj: string | undefined } => {
     const valibotList: any = {};
 
-    for (let i = 0; i < Object.keys(data).length; i++) {
+    for (let i = 0; i < Object?.keys(data)?.length; i++) {
       const key = Object.keys(data)[i];
 
       if (typeof data[key] === 'object') {
@@ -121,10 +121,13 @@ export class ValibotValidator {
     return { last: false, obj: this.valibodObject[indentName] };
   };
 
-  addValibotItem = (typeConfig: Schema, uuid: string) => {
+  addValibotItem = (schema: Schema, uuid: string) => {
     //Remove the top level entry of the list which is either request / response
-
-    const constructedConfig = Object.values(construct(typeConfig))[0];
+    if (Object.keys(schema).length === 0) {
+      return;
+    }
+    console.log('Schema: ', JSON.stringify(schema, null, 2));
+    const constructedConfig = Object.values(construct(schema))[0];
     const valibot = this.recursiveValibotCreator(constructedConfig, '');
     this.valibotMap[uuid + '_valibot_' + `${this.valiBotType}`] = valibot.obj;
     return;
