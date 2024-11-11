@@ -10,3 +10,13 @@ export const convertString = (s: string | undefined): boolean | number | string 
   if (!isNaN(num)) return num;
   return s;
 };
+
+export const catchError = <T>(promise: Promise<T>): Promise<[undefined, T] | [Error]> => {
+  return promise
+    .then((data) => {
+      return [undefined, data] as [undefined, T];
+    })
+    .catch((error) => {
+      return [error];
+    });
+};

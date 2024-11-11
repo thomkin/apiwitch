@@ -1,25 +1,16 @@
 import { CoreError, CoreErrorCodes, HttpErrorCode, HttpErrorMsg } from './error';
-import { AuthHandler } from './types';
+import { AuthHandler, AuthReturn } from './types';
 
 const _authHandlerMap: Map<string, AuthHandler> = new Map();
 
-const handlerPlaceholder = (authorization: string | undefined) => {
-  console.log('default auth handler called', authorization);
-
-  return;
-
+const handlerPlaceholder = (authorization: string | undefined): AuthReturn => {
   return {
-    code: HttpErrorCode.Unauthorized,
-    responseMsg: {
+    error: {
       code: CoreErrorCodes.NoAuthHandlerDefined,
-      msg: 'could not find auth handler so we block the route by default',
+      message:
+        'internal auth handler was used!!!. Route is clocked. Please set the correct auth handler',
     },
-  } as HttpErrorMsg;
-
-  //   throw new CoreError(
-  //     CoreErrorCodes.NoAuthHandlerDefined,
-  //     `No auth handler defined all requested are rejected!`,
-  //   );
+  };
 };
 
 export const addAuthHandler = (id: string, handler: AuthHandler) => {

@@ -1,12 +1,20 @@
 import { ApiwitchConfig, FrameworkContext, HttpMethods, MethodHandler } from '../../types';
-import * as v from 'valibot';
-import { convertString } from '../../core/utils';
+
+import { catchError, convertString } from '../../core/utils';
 import { cors } from '@elysiajs/cors';
-import { Elysia } from 'elysia';
+import { Context, Elysia } from 'elysia';
 
 import swagger from '@elysiajs/swagger';
 import { getAuthHandler } from '../../core/auth';
-import { HttpErrorCode, HttpErrorMsg } from '../../core/error';
+import { CoreErrorCodes, HttpErrorCode, HttpErrorMsg } from '../../core/error';
+import {
+  handleBestEffortDelete,
+  handleBestEffortGet,
+  handleBestEffortPatch,
+  handleBestEffortPost,
+  handleCommentInputSelect,
+} from '../../core/inputSelect';
+import { routeRequestValidation } from '../../core/validation';
 
 let _app: Elysia;
 
@@ -29,105 +37,18 @@ const init = (config: ApiwitchConfig) => {
   //start the server
   _app.listen(3000);
 };
-const handleBestEffortGet = (
-  context: any,
-  handler: MethodHandler,
-  request: { [key: string]: any },
-) => {
-  handler?.bestEffortSelect?.forEach((key) => {
-    //check:: params --> query
-    if (context?.params?.[key]) {
-      request[key] = context?.params?.[key];
-      return;
-    }
-    if (context?.query?.[key]) {
-      request[key] = context?.query?.[key];
-      return;
-    }
-  });
-};
-
-const handleBestEffortPost = (
-  context: any,
-  handler: MethodHandler,
-  request: { [key: string]: any },
-) => {
-  handler?.bestEffortSelect?.forEach((key) => {
-    //check:: params --> body
-    if (context?.params?.[key]) {
-      request[key] = context?.params?.[key];
-      return;
-    }
-    if (context?.body?.[key]) {
-      request[key] = context?.body?.[key];
-      return;
-    }
-  });
-};
-
-const handleBestEffortPatch = (
-  context: any,
-  handler: MethodHandler,
-  request: { [key: string]: any },
-) => {
-  handler?.bestEffortSelect?.forEach((key) => {
-    //check:: params --> body -> query
-    if (context?.params?.[key]) {
-      request[key] = context?.params?.[key];
-      return;
-    }
-    if (context?.body?.[key]) {
-      request[key] = context?.body?.[key];
-      return;
-    }
-  });
-};
-
-const handleBestEffortDelete = (
-  context: any,
-  handler: MethodHandler,
-  request: { [key: string]: any },
-) => {
-  handler?.bestEffortSelect?.forEach((key) => {
-    //check:: params --> query
-    if (context?.params?.[key]) {
-      request[key] = context?.params?.[key];
-      return;
-    }
-    if (context?.query?.[key]) {
-      request[key] = context?.query?.[key];
-      return;
-    }
-  });
-};
-
-const handleCommentInputSelect = (
-  context: any,
-  handler: MethodHandler,
-  request: { [key: string]: any },
-) => {
-  //get all the query parameters the user would like to have
-  handler?.querySelect?.forEach((queryKey) => {
-    request[queryKey] = convertString(context.query?.[queryKey]);
-  });
-
-  //get all the body parameters the user would like to have
-  handler?.bodySelect?.forEach((bodyKey) => {
-    request[bodyKey] = convertString((context as any).body?.[bodyKey]);
-  });
-
-  //get all the header parameters the user would like to have
-  handler?.headerSelect?.forEach((headerKey) => {
-    request[headerKey] = convertString(context.headers?.[headerKey]);
-  });
-
-  //get all the params the user would like to have
-  handler?.paramSelect?.forEach((paramKey) => {
-    request[paramKey] = convertString(context.params?.[paramKey]);
-  });
-};
 
 const addRoute = (handler: MethodHandler, witchcraftSchemas: { [key: string]: any }) => {
+  const beforeHandle = (context: Context) => {
+    //Handle Authentication
+    const authRet = getAuthHandler(handler.auth)(context?.headers?.authorization);
+    if (authRet?.error) {
+      return context.error(HttpErrorCode.Unauthorized, authRet?.error);
+    } else if (authRet.meta) {
+      context.store = authRet.meta || {};
+    }
+  };
+
   return (): MethodHandler => {
     switch (handler.method) {
       case HttpMethods.get:
@@ -136,52 +57,58 @@ const addRoute = (handler: MethodHandler, witchcraftSchemas: { [key: string]: an
           (context) => {
             const request: { [key: string]: any } = {};
 
+            //first map the data from the different source (body, params etc..)
             handleBestEffortGet(context, handler, request);
             handleCommentInputSelect(context, handler, request);
 
-            //Then validate the inputs
-            const requestSchema = witchcraftSchemas[handler.uuid + '_valibot_request'];
-            console.log('REquest Shema', requestSchema);
+            //Then do data validation based on the defined schema
+            routeRequestValidation({
+              context,
+              request,
+              uuid: handler.uuid,
+              witchcraftSchemas: witchcraftSchemas,
+            });
 
-            return handler.callback(request, context.error, context.redirect);
+            //we are ready to call the handler itself,
+            return handler.callback({
+              request,
+              error: context.error,
+              redirect: context.redirect,
+              meta: context.store,
+            });
           },
-          {
-            beforeHandle: (context) => {
-              //First authenticate
-              const error = getAuthHandler(handler.auth)(context?.headers?.authorization);
-              if (error) {
-                return context.error(error.code, error.responseMsg);
-              }
-            },
-          },
+          { beforeHandle },
         );
         break;
 
       case HttpMethods.post:
         _app.post(
           handler.path,
-          (context) => {
+          async (context) => {
             const request: { [key: string]: any } = {};
 
-            console.log(handler);
-
-            handleBestEffortPost(context, handler, request);
+            //first map the data from the different source (body, params etc..)
+            const newBestEffortData = handleBestEffortPost(context, handler, request);
+            console.log(newBestEffortData);
             handleCommentInputSelect(context, handler, request);
 
-            //Then validate the inputs
-            const requestSchema = witchcraftSchemas[handler.uuid + '_valibot_request'];
-            v.parse(requestSchema, request);
+            //Then do data validation based on the defined schema
+            routeRequestValidation({
+              context,
+              request,
+              uuid: handler.uuid,
+              witchcraftSchemas: witchcraftSchemas,
+            });
 
-            return handler.callback(request, context.error, context.redirect);
+            //we are ready to call the handler itself,
+            return handler.callback({
+              request,
+              error: context.error,
+              redirect: context.redirect,
+              meta: context.store,
+            });
           },
-          {
-            beforeHandle: (context) => {
-              const error = getAuthHandler(handler.auth)(context?.headers?.authorization);
-              if (error) {
-                return context.error(error.code, error.responseMsg);
-              }
-            },
-          },
+          { beforeHandle },
         );
 
         break;
@@ -191,18 +118,28 @@ const addRoute = (handler: MethodHandler, witchcraftSchemas: { [key: string]: an
           handler.path,
           (context) => {
             const request: { [key: string]: any } = {};
+
+            //first map the data from the different source (body, params etc..)
             handleBestEffortPatch(context, handler, request);
             handleCommentInputSelect(context, handler, request);
-            return handler.callback(request, context.error, context.redirect);
+
+            //Then do data validation based on the defined schema
+            routeRequestValidation({
+              context,
+              request,
+              uuid: handler.uuid,
+              witchcraftSchemas: witchcraftSchemas,
+            });
+
+            //we are ready to call the handler itself,
+            return handler.callback({
+              request,
+              error: context.error,
+              redirect: context.redirect,
+              meta: context.store,
+            });
           },
-          {
-            beforeHandle: (context) => {
-              const error = getAuthHandler(handler.auth)(context?.headers?.authorization);
-              if (error) {
-                return context.error(error.code, error.responseMsg);
-              }
-            },
-          },
+          { beforeHandle },
         );
         break;
 
@@ -211,18 +148,28 @@ const addRoute = (handler: MethodHandler, witchcraftSchemas: { [key: string]: an
           handler.path,
           (context) => {
             const request: { [key: string]: any } = {};
+
+            //first map the data from the different source (body, params etc..)
             handleBestEffortDelete(context, handler, request);
             handleCommentInputSelect(context, handler, request);
-            return handler.callback(request, context.error, context.redirect);
+
+            //Then do data validation based on the defined schema
+            routeRequestValidation({
+              context,
+              request,
+              uuid: handler.uuid,
+              witchcraftSchemas: witchcraftSchemas,
+            });
+
+            //we are ready to call the handler itself,
+            return handler.callback({
+              request,
+              error: context.error,
+              redirect: context.redirect,
+              meta: context.store,
+            });
           },
-          {
-            beforeHandle: (context) => {
-              const error = getAuthHandler(handler.auth)(context?.headers?.authorization);
-              if (error) {
-                return context.error(error.code, error.responseMsg);
-              }
-            },
-          },
+          { beforeHandle },
         );
         break;
 

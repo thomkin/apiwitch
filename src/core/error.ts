@@ -1,6 +1,7 @@
 export enum CoreErrorCodes {
   AuthHandlerAlreadyExists = 0,
   NoAuthHandlerDefined,
+  ValidationFailed,
 }
 
 export enum HttpErrorCode {
@@ -42,12 +43,8 @@ export enum HttpErrorCode {
 }
 
 export type HttpErrorMsg = {
-  code: HttpErrorCode;
-
-  responseMsg: {
-    code: number;
-    msg: string;
-  };
+  code?: number | string;
+  message: any;
 };
 
 export class CoreError extends Error {

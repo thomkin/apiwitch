@@ -57,11 +57,12 @@ export interface MethodHandler {
   paramSelect?: string[];
   headerSelect?: string[];
   bestEffortSelect?: string[];
-  callback: (
-    request: any,
-    error: (code: number, message: string) => void,
-    redirect: (url: string, status: 301 | 302 | 303 | 307 | 308 | undefined) => void,
-  ) => Promise<any>;
+  callback: (input: {
+    request: any;
+    error: (code: number, message: string) => void;
+    redirect: (url: string, status: 301 | 302 | 303 | 307 | 308 | undefined) => void;
+    meta: { [key: string]: any };
+  }) => Promise<any>;
 }
 
 export interface AutoGenMethodData {
@@ -91,5 +92,10 @@ export interface ApiWitchRoute {
   callback: (request: any) => Promise<any>;
 }
 
-export type AuthHandler = (authorization: string | undefined) => HttpErrorMsg | undefined;
+export type AuthReturn = {
+  error?: HttpErrorMsg;
+  meta?: { [key: string]: any };
+};
+
+export type AuthHandler = (authorization: string | undefined) => AuthReturn;
 export type AuthHandlerMap = Map<string, AuthHandler>;
