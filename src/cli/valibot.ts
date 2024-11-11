@@ -6,14 +6,23 @@ import Mustache from 'mustache';
 import prettier from 'prettier';
 import path from 'path';
 import fs from 'fs';
+import { logger } from './logger';
+
+export enum ValidBotOutputType {
+  request = 'request',
+  response = 'response',
+}
 
 export class ValibotValidator {
   private childDepth = 0;
   private keyChain: string[] = [];
   private valibodObject: { [key: string]: string } = {};
   private valibotMap: { [key: string]: any } = {};
+  private valiBotType: ValidBotOutputType;
 
-  constructor() {}
+  constructor(type: ValidBotOutputType) {
+    this.valiBotType = type;
+  }
 
   private createTabs = (numTabs: number): string => {
     return Array(numTabs)
@@ -112,11 +121,12 @@ export class ValibotValidator {
     return { last: false, obj: this.valibodObject[indentName] };
   };
 
-  addValibotItem = (typeConfig: PropertyList, uuid: string, id: string) => {
+  addValibotItem = (typeConfig: PropertyList, uuid: string) => {
     //Remove the top level entry of the list which is either request / response
+
     const constructedConfig = Object.values(construct(typeConfig))[0];
     const valibot = this.recursiveValibotCreator(constructedConfig, '');
-    this.valibotMap[uuid + '_valibot_' + id] = valibot.obj;
+    this.valibotMap[uuid + '_valibot_' + `${this.valiBotType}`] = valibot.obj;
     return;
   };
 
@@ -142,6 +152,7 @@ export class ValibotValidator {
 
     const data = Mustache.render(valibotMustacheTemp, {
       valibotMap: this.toString(),
+      type: this.valiBotType,
     });
 
     //This is a little hacky we should not included the question marks in the beginning
@@ -157,7 +168,7 @@ export class ValibotValidator {
     });
 
     const outDir = path.join(process.cwd(), cliConfig.includeDir, 'witchcraft');
-    const outValidationPath = path.join(outDir, 'validation.ts');
+    const outValidationPath = path.join(outDir, `${this.valiBotType}.schemas.ts`);
     fs.writeFileSync(outValidationPath, formattedTemplate, { flag: 'w' });
 
     return formattedTemplate;

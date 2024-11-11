@@ -222,6 +222,7 @@ export const startTransform = (file: string): TransformResult | undefined => {
   const typeRequest = src.getTypeAlias('Request');
   const typeResponse = src.getTypeAlias('Response');
 
+  //TODO: this seem to be broken needs to be types
   const interfaceRequest = src.getInterface('Request');
   const interfaceResponse = src.getInterface('Response');
 

@@ -228,3 +228,5 @@ You can either use the **type** or **interface** keywords.
 
 - [ ]Bug 001: Best effort values are not set when there is no configration in the block comment
 - [ ] Features 002: add the creation of different files for schema for request and response objects
+
+//TODO: an empty Request does not work !!! that needs to change!!!

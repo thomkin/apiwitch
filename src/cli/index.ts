@@ -2,7 +2,7 @@ import { catchError, getTypeScriptFiles, getUUID, mergeSourceLists } from './uti
 import { AutoGenMethodData, HttpMethods } from '../types';
 import { RouteFileGenerator } from './fileGenerator';
 import { ErrorCode, logger } from './logger';
-import { ValibotValidator } from './valibot';
+import { ValibotValidator, ValidBotOutputType } from './valibot';
 import { startTransform } from './parser';
 import { CliConfig } from './types';
 
@@ -45,7 +45,8 @@ export const run = async () => {
     const tsFiles = getTypeScriptFiles(cliConfig.includeDir);
 
     const rfg = new RouteFileGenerator();
-    const valibot = new ValibotValidator();
+    const valibotRequest = new ValibotValidator(ValidBotOutputType.request);
+    const valibotResponse = new ValibotValidator(ValidBotOutputType.response);
 
     tsFiles.forEach((tsFile) => {
       logger.info(`Parse file ::${tsFile}`);
@@ -73,13 +74,15 @@ export const run = async () => {
         rfg.addRoute(methodDateRequest);
 
         //then add pass information to valibot so that it can generate the schemas
-        valibot.addValibotItem(res.request.propertyList, uuid, 'request');
+        valibotRequest.addValibotItem(res.request.propertyList, uuid);
+        valibotResponse.addValibotItem(res.response.propertyList, uuid);
       }
     });
 
     logger.info('start generating output files...');
     rfg.generate();
-    valibot.generate();
+    valibotRequest.generate();
+    valibotResponse.generate();
     logger.info('✨🧙‍♀️ Hooray! The witch has successfully completed her latest magic spells! 🌟🔮');
   } catch (error) {
     console.log(error);
