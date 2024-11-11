@@ -1,4 +1,4 @@
-import { FrameworkId, HttpMethods, MethodHandler, ApiwitchConfig } from './types';
+import { FrameworkId, MethodHandler, ApiwitchConfig } from './types';
 import { ctx as elysiaCtx } from '../frameworks/elysia';
 import { addAuthHandler } from './auth';
 

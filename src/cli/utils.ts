@@ -4,14 +4,12 @@ import { CommentInputSelect, IterReturn } from './types';
 import { logger } from './logger';
 import { InterfaceDeclaration, SyntaxKind, TypeAliasDeclaration } from 'ts-morph';
 
-/*************  ✨ Codeium Command ⭐  *************/
 /**
  * This function takes a directory path and returns an array of paths to all
  * the typescript files in that directory and any subdirectories.
  * @param includeDir the directory to start searching for typescript files
  * @returns an array of paths to all the typescript files
  */
-/******  1b3d552b-b587-45bb-9692-eaebcaa14d6e  *******/
 export const getTypeScriptFiles = (includeDir: string) => {
   const tsFiles: string[] = [];
   const addTsFiles = (dirPath: string) => {
@@ -31,7 +29,6 @@ export const getTypeScriptFiles = (includeDir: string) => {
   return tsFiles;
 };
 
-/*************  ✨ Codeium Command ⭐  *************/
 /**
  * Given a promise, this function will catch any errors that are thrown
  * and return a promise that resolves to an array with either:
@@ -43,7 +40,7 @@ export const getTypeScriptFiles = (includeDir: string) => {
  * @param promise - the promise to be wrapped
  * @returns a promise that resolves to an array with either [undefined, data] or [error]
  */
-/******  8ea463d0-1b11-4794-bb8d-9ba1a50037e0  *******/
+
 export const catchError = <T>(promise: Promise<T>): Promise<[undefined, T] | [Error]> => {
   return promise
     .then((data) => {
@@ -120,6 +117,13 @@ export const mergeInputSelect = (rawSchema: IterReturn) => {
  * @returns a SourceList object
  */
 const getSourceList = (sourceName: string, name: string, parameters: string): SourceList => {
+  //We need to strip the first element from the name as it refers to the type name in TS code which is not
+  //needed for further processing
+  const nameParts = name.split('.');
+  if (nameParts.length > 1) {
+    name = nameParts.slice(1).join('.');
+  }
+
   switch (sourceName) {
     case 'header':
       return {
@@ -245,7 +249,6 @@ export const parseTypeCommentConfig = (
     return tmpList.map((line) => {
       const { cleanText, inputSource, params } = extractInputSource(line);
       const nameOfKey = keyPrepend + extractKeyName(line);
-
       const pipe = getOptionsFromComment(cleanText);
 
       const ret: CommentConfigItem = {

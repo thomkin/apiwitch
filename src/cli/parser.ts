@@ -24,52 +24,53 @@ import {
   SyntaxKind,
   VariableDeclaration,
 } from 'ts-morph';
+import { construct, crush } from 'radash';
 
-const iterateOverProps = (
-  propList: Symbol[],
-  typeDeclaration: TypeAliasDeclaration | InterfaceDeclaration,
-  topName: string,
-  typeChecker: TypeChecker,
-  indentLevel: number,
-): IterReturn | null => {
-  const paramList: any[] = [];
+// const iterateOverProps = (
+//   propList: Symbol[],
+//   typeDeclaration: TypeAliasDeclaration | InterfaceDeclaration,
+//   topName: string,
+//   typeChecker: TypeChecker,
+//   indentLevel: number,
+// ): IterReturn | null => {
+//   const paramList: any[] = [];
 
-  propList.forEach((prop, idx) => {
-    const propName = prop.getName();
-    const propType = typeChecker.getTypeOfSymbolAtLocation(prop, typeDeclaration);
-    const isNative = isNativeType(propType.getText());
+//   propList.forEach((prop, idx) => {
+//     const propName = prop.getName();
+//     const propType = typeChecker.getTypeOfSymbolAtLocation(prop, typeDeclaration);
+//     const isNative = isNativeType(propType.getText());
 
-    if (!isNative) {
-      const _propType = propType.getProperties();
-      const ret = iterateOverProps(
-        _propType,
-        typeDeclaration,
-        propName,
-        typeChecker,
-        indentLevel + 1,
-      );
+//     if (!isNative) {
+//       const _propType = propType.getProperties();
+//       const ret = iterateOverProps(
+//         _propType,
+//         typeDeclaration,
+//         propName,
+//         typeChecker,
+//         indentLevel + 1,
+//       );
 
-      ret && paramList.push(ret);
-      return;
-    }
+//       ret && paramList.push(ret);
+//       return;
+//     }
 
-    //if we come here it means we reached the end of the child branch
-    const value = {} as IterReturn;
-    paramList.push(value);
-  });
+//     //if we come here it means we reached the end of the child branch
+//     const value = {} as IterReturn;
+//     paramList.push(value);
+//   });
 
-  //Merge the parameters of this child and return
-  const merged: IterReturn = {};
+//   //Merge the parameters of this child and return
+//   const merged: IterReturn = {};
 
-  //@ts-ignore
-  merged[topName] = {} as IterReturn;
+//   //@ts-ignore
+//   merged[topName] = {} as IterReturn;
 
-  paramList.forEach((item) => {
-    merged[topName] = { ...merged[topName], ...item };
-  });
+//   paramList.forEach((item) => {
+//     merged[topName] = { ...merged[topName], ...item };
+//   });
 
-  return merged;
-};
+//   return merged;
+// };
 
 const processTypeOrInterface = (
   typeDeclaration: TypeAliasDeclaration | InterfaceDeclaration | undefined,

@@ -1,4 +1,4 @@
-import { CoreError, CoreErrorCodes, HttpErrorCode, HttpErrorMsg } from './error';
+import { CoreError, CoreErrorCodes } from './error';
 import { AuthHandler, AuthReturn } from './types';
 
 const _authHandlerMap: Map<string, AuthHandler> = new Map();

@@ -1,99 +1,85 @@
+import { construct, crush, set } from 'radash';
 import { MethodHandler } from './types';
-import { convertString } from './utils';
 
-export const handleBestEffortGet = (
-  context: any,
-  handler: MethodHandler,
-  request: { [key: string]: any },
-) => {
-  handler?.bestEffortSelect?.forEach((key) => {
-    //check:: params --> query
-    if (key in context.params) {
-      request[key] = context?.params?.[key];
-      return;
-    } else if (key in context?.query) {
-      request[key] = context?.query?.[key];
-      return;
+export enum BestEffortMode {
+  ParamQueryBody = 'pqb',
+  ParamQuery = 'pq',
+  ParamBody = 'pb',
+}
+
+export const handleBestEffort = (input: {
+  query: { [key: string]: any };
+  headers: { [key: string]: any };
+  body: { [key: string]: any };
+  params: { [key: string]: any };
+  mode: BestEffortMode;
+  handler: MethodHandler;
+}): any => {
+  let output: { [key: string]: any } = {};
+  const mode = input.mode;
+  for (let i = 0; i < mode.length; i++) {
+    const char = mode[i];
+    switch (char) {
+      case 'p':
+        constructData(input.params, input?.handler?.bestEffortSelect || [], output);
+        break;
+      case 'q':
+        constructData(input.query, input?.handler?.bestEffortSelect || [], output);
+        break;
+      case 'b':
+        constructData(input.body, input?.handler?.bestEffortSelect || [], output);
+        break;
+      case 'h':
+        constructData(input.headers, input?.handler?.bestEffortSelect || [], output);
+        break;
     }
+  }
+  return construct(output);
+};
+
+const constructData = (data: any, selectObj: string[], output: { [key: string]: any }) => {
+  selectObj?.forEach((selecTKey) => {
+    const crushedBody = crush(data) as { [key: string]: any };
+    const value = crushedBody[selecTKey];
+
+    let tmp = set<{ [key: string]: any }, any>({}, selecTKey, value);
+    output[selecTKey] = value;
   });
 };
 
-export const handleBestEffortPost = (
-  context: any,
-  handler: MethodHandler,
-  request: { [key: string]: any },
-): any => {
-  handler?.bestEffortSelect?.forEach((key) => {
-    //check::  first params -->  then body
-    if (key in context.params) {
-      request[key] = context.params?.[key];
-      return true;
-    } else if (key in context?.body) {
-      request[key] = context.body?.[key];
-      return true;
-    }
+export const handleCommentInputSelect = (input: {
+  query: { [key: string]: any };
+  headers: { [key: string]: any };
+  body: { [key: string]: any };
+  params: { [key: string]: any };
+  handler: MethodHandler;
+}): { [key: string]: any } => {
+  let output: { [key: string]: any } = {};
+
+  const newBestEffortData = handleBestEffort({
+    handler: input.handler,
+    body: input.body || {},
+    headers: input.headers,
+    params: input.params,
+    query: input.query,
+    mode:
+      input.handler.method === 'get'
+        ? BestEffortMode.ParamQuery
+        : input.handler.method === 'post'
+          ? BestEffortMode.ParamBody
+          : input.handler.method === 'patch'
+            ? BestEffortMode.ParamQueryBody
+            : input.handler.method === 'delete'
+              ? BestEffortMode.ParamQuery
+              : BestEffortMode.ParamQueryBody,
   });
 
-  return false;
-};
+  constructData(input.body, input?.handler?.bodySelect || [], output);
+  constructData(input.query, input?.handler?.querySelect || [], output);
+  constructData(input.params, input?.handler?.paramSelect || [], output);
+  constructData(input.headers, input?.handler?.headerSelect || [], output);
 
-export const handleBestEffortPatch = (
-  context: any,
-  handler: MethodHandler,
-  request: { [key: string]: any },
-) => {
-  handler?.bestEffortSelect?.forEach((key) => {
-    //check:: params --> body
-    if (key in context.params) {
-      request[key] = context?.params?.[key];
-      return;
-    } else if (key in context?.body) {
-      request[key] = context?.body?.[key];
-      return;
-    }
-  });
-};
+  const outConstruct = construct(output);
 
-export const handleBestEffortDelete = (
-  context: any,
-  handler: MethodHandler,
-  request: { [key: string]: any },
-) => {
-  handler?.bestEffortSelect?.forEach((key) => {
-    //check:: params --> query
-    if (key in context.params) {
-      request[key] = context?.params?.[key];
-      return;
-    }
-    if (key in context?.query) {
-      request[key] = context?.query?.[key];
-      return;
-    }
-  });
-};
-
-export const handleCommentInputSelect = (
-  context: any,
-  handler: MethodHandler,
-  request: { [key: string]: any },
-) => {
-  //get all the query parameters the user would like to have
-  handler?.querySelect?.forEach((queryKey) => {
-    request[queryKey] = convertString(context.query?.[queryKey]);
-  });
-
-  //get all the body parameters the user would like to have
-  handler?.bodySelect?.forEach((bodyKey) => {
-    request[bodyKey] = convertString((context as any).body?.[bodyKey]);
-  });
-
-  //get all the header parameters the user would like to have
-  handler?.headerSelect?.forEach((headerKey) => {
-    request[headerKey] = convertString(context.headers?.[headerKey]);
-  });
-
-  //get all the params the user would like to have
-  handler?.paramSelect?.forEach((paramKey) => {
-    request[paramKey] = convertString(context.params?.[paramKey]);
-  });
+  return Object.assign({}, outConstruct, newBestEffortData);
 };

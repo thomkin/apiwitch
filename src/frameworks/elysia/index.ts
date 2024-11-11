@@ -1,20 +1,14 @@
+import { handleCommentInputSelect as handlePropsInputSelect } from '../../core/inputSelect';
 import { ApiwitchConfig, FrameworkContext, HttpMethods, MethodHandler } from '../../types';
-
-import { catchError, convertString } from '../../core/utils';
-import { cors } from '@elysiajs/cors';
+import { routeRequestValidation } from '../../core/validation';
 import { Context, Elysia } from 'elysia';
+import { getAuthHandler } from '../../core/auth';
+import { HttpErrorCode } from '../../core/error';
+import { clone } from 'radash';
+import { cors } from '@elysiajs/cors';
 
 import swagger from '@elysiajs/swagger';
-import { getAuthHandler } from '../../core/auth';
-import { CoreErrorCodes, HttpErrorCode, HttpErrorMsg } from '../../core/error';
-import {
-  handleBestEffortDelete,
-  handleBestEffortGet,
-  handleBestEffortPatch,
-  handleBestEffortPost,
-  handleCommentInputSelect,
-} from '../../core/inputSelect';
-import { routeRequestValidation } from '../../core/validation';
+import { logger } from '../../core/logger';
 
 let _app: Elysia;
 
@@ -34,8 +28,41 @@ const init = (config: ApiwitchConfig) => {
     );
   }
 
-  //start the server
-  _app.listen(3000);
+  logger.info(`Server started on port ${config.frameworkConfig.port}`);
+  _app.listen(config.frameworkConfig.port);
+};
+
+const routeHandlerWrapper = async (
+  context: Context,
+  handler: MethodHandler,
+  witchcraftSchemas: { [key: string]: any },
+) => {
+  const handlerReq = handlePropsInputSelect({
+    handler: handler,
+    body: context.body || {},
+    headers: context.headers,
+    params: context.params,
+    query: context.query,
+  });
+
+  // Then do data validation based on the defined schema
+  const valid = routeRequestValidation({
+    context,
+    request: handlerReq,
+    uuid: handler.uuid,
+    witchcraftSchemas: witchcraftSchemas,
+  });
+
+  if (valid.error) {
+    return valid.error;
+  }
+
+  return handler.callback({
+    request: clone(valid.data),
+    error: context.error,
+    redirect: context.redirect,
+    meta: { ...context.store },
+  });
 };
 
 const addRoute = (handler: MethodHandler, witchcraftSchemas: { [key: string]: any }) => {
@@ -54,28 +81,8 @@ const addRoute = (handler: MethodHandler, witchcraftSchemas: { [key: string]: an
       case HttpMethods.get:
         _app.get(
           handler.path,
-          (context) => {
-            const request: { [key: string]: any } = {};
-
-            //first map the data from the different source (body, params etc..)
-            handleBestEffortGet(context, handler, request);
-            handleCommentInputSelect(context, handler, request);
-
-            //Then do data validation based on the defined schema
-            routeRequestValidation({
-              context,
-              request,
-              uuid: handler.uuid,
-              witchcraftSchemas: witchcraftSchemas,
-            });
-
-            //we are ready to call the handler itself,
-            return handler.callback({
-              request,
-              error: context.error,
-              redirect: context.redirect,
-              meta: context.store,
-            });
+          async (context) => {
+            return routeHandlerWrapper(context, handler, witchcraftSchemas);
           },
           { beforeHandle },
         );
@@ -85,28 +92,7 @@ const addRoute = (handler: MethodHandler, witchcraftSchemas: { [key: string]: an
         _app.post(
           handler.path,
           async (context) => {
-            const request: { [key: string]: any } = {};
-
-            //first map the data from the different source (body, params etc..)
-            const newBestEffortData = handleBestEffortPost(context, handler, request);
-            console.log(newBestEffortData);
-            handleCommentInputSelect(context, handler, request);
-
-            //Then do data validation based on the defined schema
-            routeRequestValidation({
-              context,
-              request,
-              uuid: handler.uuid,
-              witchcraftSchemas: witchcraftSchemas,
-            });
-
-            //we are ready to call the handler itself,
-            return handler.callback({
-              request,
-              error: context.error,
-              redirect: context.redirect,
-              meta: context.store,
-            });
+            return routeHandlerWrapper(context, handler, witchcraftSchemas);
           },
           { beforeHandle },
         );
@@ -116,63 +102,20 @@ const addRoute = (handler: MethodHandler, witchcraftSchemas: { [key: string]: an
       case HttpMethods.patch:
         _app.patch(
           handler.path,
-          (context) => {
-            const request: { [key: string]: any } = {};
-
-            //first map the data from the different source (body, params etc..)
-            handleBestEffortPatch(context, handler, request);
-            handleCommentInputSelect(context, handler, request);
-
-            //Then do data validation based on the defined schema
-            routeRequestValidation({
-              context,
-              request,
-              uuid: handler.uuid,
-              witchcraftSchemas: witchcraftSchemas,
-            });
-
-            //we are ready to call the handler itself,
-            return handler.callback({
-              request,
-              error: context.error,
-              redirect: context.redirect,
-              meta: context.store,
-            });
+          async (context) => {
+            return routeHandlerWrapper(context, handler, witchcraftSchemas);
           },
           { beforeHandle },
         );
-        break;
 
       case HttpMethods.delete:
         _app.delete(
           handler.path,
-          (context) => {
-            const request: { [key: string]: any } = {};
-
-            //first map the data from the different source (body, params etc..)
-            handleBestEffortDelete(context, handler, request);
-            handleCommentInputSelect(context, handler, request);
-
-            //Then do data validation based on the defined schema
-            routeRequestValidation({
-              context,
-              request,
-              uuid: handler.uuid,
-              witchcraftSchemas: witchcraftSchemas,
-            });
-
-            //we are ready to call the handler itself,
-            return handler.callback({
-              request,
-              error: context.error,
-              redirect: context.redirect,
-              meta: context.store,
-            });
+          async (context) => {
+            return routeHandlerWrapper(context, handler, witchcraftSchemas);
           },
           { beforeHandle },
         );
-        break;
-
       default:
         break;
     }

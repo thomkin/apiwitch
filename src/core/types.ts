@@ -1,4 +1,3 @@
-import { IterReturn } from '../cli/types';
 import { HttpErrorMsg } from './error';
 
 export enum FrameworkId {
@@ -88,8 +87,7 @@ export interface ApiWitchRoute {
   method: string;
   path: string;
   auth?: boolean | string;
-
-  callback: (request: any) => Promise<any>;
+  callback: ApiWitchRouteHandler;
 }
 
 export type AuthReturn = {
@@ -99,3 +97,12 @@ export type AuthReturn = {
 
 export type AuthHandler = (authorization: string | undefined) => AuthReturn;
 export type AuthHandlerMap = Map<string, AuthHandler>;
+
+export type ApiWitchRouteInput<req> = {
+  request: req;
+  error: (code: number, message: string) => any;
+  redirect: (url: string, status: 301 | 302 | 303 | 307 | 308 | undefined) => any;
+  meta: { [key: string]: any };
+};
+
+export type ApiWitchRouteHandler = <req, res>(input: ApiWitchRouteInput<req>) => Promise<res>;

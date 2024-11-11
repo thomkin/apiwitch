@@ -113,6 +113,7 @@ export class ValibotValidator {
   };
 
   addValibotItem = (typeConfig: PropertyList, uuid: string, id: string) => {
+    //Remove the top level entry of the list which is either request / response
     const constructedConfig = Object.values(construct(typeConfig))[0];
     const valibot = this.recursiveValibotCreator(constructedConfig, '');
     this.valibotMap[uuid + '_valibot_' + id] = valibot.obj;
