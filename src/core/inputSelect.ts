@@ -26,8 +26,7 @@ export const handleBestEffort = (input: {
           : input.handler.method === 'delete'
             ? BestEffortMode.ParamQuery
             : BestEffortMode.ParamQueryBody;
-  console.log('input body: ', input.body);
-  console.log('bestEffortSelect: ', input.handler.bestEffortSelect);
+
   for (let i = 0; i < mode.length; i++) {
     const char = mode[i];
     switch (char) {
@@ -45,8 +44,6 @@ export const handleBestEffort = (input: {
         break;
     }
   }
-
-  console.log('output', output);
 
   return construct(output);
 };

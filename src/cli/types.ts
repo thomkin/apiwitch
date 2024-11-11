@@ -30,11 +30,6 @@ export type TypeConfigItem = {
   key: string;
 };
 
-// export type ParserReturn = {
-//   typeObject: IterReturn;
-//   typeConfig: TypeConfigItem[];
-// };
-
 export type IterReturn = { [key: string]: IterItem };
 
 export type CliConfig = {

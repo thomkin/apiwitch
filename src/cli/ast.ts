@@ -162,15 +162,13 @@ export class AstParser {
         const nameOfKey = keyPrepend + '.' + this.extractKeyName(line);
         const pipe = this.getOptionsFromComment(cleanText);
 
-        console.log(`name of key is ${nameOfKey}`);
-
         const ret: TypeConfigItem = {
           inputSource: {
             params,
             source: inputSource as InputSourceEnum,
             id: this.extractKeyName(line),
           },
-          // sourceList: this.getSourceList(inputSource, nameOfKey, params),
+
           pipe: pipe,
           key: nameOfKey,
         };
@@ -187,8 +185,6 @@ export class AstParser {
     keyPrepend: string,
   ): Schema => {
     this.getTypesRecursively(typeDeclaration, keyPrepend);
-    // const typeConfigList = this.parseTypeConfigFromComment(typeDeclaration, keyPrepend);
-
     return this.propertyList;
   };
 }

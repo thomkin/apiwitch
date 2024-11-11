@@ -45,8 +45,6 @@ const routeHandlerWrapper = async (
     query: context.query,
   });
 
-  // console.log('context -->', context, handlerReq);
-
   // Then do data validation based on the defined schema
   const valid = routeRequestValidation({
     context,

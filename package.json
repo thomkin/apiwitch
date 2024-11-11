@@ -1,6 +1,6 @@
 {
   "name": "apiwitch",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "A small tool that can create routes for typescript web frameworks automatically like a witch",
   "main": "src/index.ts",
   "keywords": [],

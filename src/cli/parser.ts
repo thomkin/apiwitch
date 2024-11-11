@@ -1,4 +1,3 @@
-import { isNativeType } from './utils';
 import { logger, ErrorCode } from './logger';
 import { cliConfig } from './index';
 import { AstParser } from './ast';
@@ -8,8 +7,6 @@ import path from 'path';
 import {
   ApiWitchRouteExport,
   ApiWitchRouteMeta,
-  InputSourceEnum,
-  IterReturn,
   ProcessTypeResult,
   SourceList,
   TransformResult,
@@ -19,60 +16,11 @@ import {
 import {
   Project,
   SourceFile,
-  Symbol,
   TypeAliasDeclaration,
-  TypeChecker,
   InterfaceDeclaration,
   SyntaxKind,
   VariableDeclaration,
 } from 'ts-morph';
-import { construct, crush } from 'radash';
-
-// const iterateOverProps = (
-//   propList: Symbol[],
-//   typeDeclaration: TypeAliasDeclaration | InterfaceDeclaration,
-//   topName: string,
-//   typeChecker: TypeChecker,
-//   indentLevel: number,
-// ): IterReturn | null => {
-//   const paramList: any[] = [];
-
-//   propList.forEach((prop, idx) => {
-//     const propName = prop.getName();
-//     const propType = typeChecker.getTypeOfSymbolAtLocation(prop, typeDeclaration);
-//     const isNative = isNativeType(propType.getText());
-
-//     if (!isNative) {
-//       const _propType = propType.getProperties();
-//       const ret = iterateOverProps(
-//         _propType,
-//         typeDeclaration,
-//         propName,
-//         typeChecker,
-//         indentLevel + 1,
-//       );
-
-//       ret && paramList.push(ret);
-//       return;
-//     }
-
-//     //if we come here it means we reached the end of the child branch
-//     const value = {} as IterReturn;
-//     paramList.push(value);
-//   });
-
-//   //Merge the parameters of this child and return
-//   const merged: IterReturn = {};
-
-//   //@ts-ignore
-//   merged[topName] = {} as IterReturn;
-
-//   paramList.forEach((item) => {
-//     merged[topName] = { ...merged[topName], ...item };
-//   });
-
-//   return merged;
-// };
 
 const processTypeOrInterface = (
   typeDeclaration: TypeAliasDeclaration | InterfaceDeclaration | undefined,
@@ -86,9 +34,6 @@ const processTypeOrInterface = (
 
     //This object contains a schema for all properties defined on the type
     const schema = astParser.getSchemaFromTypeDeclaration(typeDeclaration, keyPrepend);
-
-    // const typeConfigArr = parseTypeCommentConfig(typeDeclaration.getText(), keyPrepend);
-    console.log(`Type config array for ${keyPrepend}`, typeConfigArr);
 
     const typeConfig: TypeConfig = {};
 
@@ -120,10 +65,6 @@ const processTypeOrInterface = (
         const newKey = key.replace(keyPrepend, '').replace(/^\./, '');
         sourceList.bestEffort.push(newKey);
       }
-
-      // schema[key].name;
-
-      console.log(`Schema for ${key}`, schema[key]);
     });
 
     return {
