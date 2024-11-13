@@ -1,4 +1,3 @@
 {
-  "includes": ["./example"],
-  "outputDir": "./src/witchcraft"
+  "includeDir": "./src/debug"
 }

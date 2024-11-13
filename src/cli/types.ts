@@ -9,9 +9,9 @@ export type IterItem = {
 };
 
 export type SchemaItem = {
-  name: string;
+  identifier: string;
   type: string;
-  required: boolean;
+  isOptional?: boolean;
   ignore?: boolean;
 };
 

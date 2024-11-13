@@ -61,8 +61,9 @@ const processTypeOrInterface = (
       if (cfg) {
         sourceList[cfg.inputSource.source].push(cfg.inputSource.id);
       } else {
-        //stip the top level name --> nmame of the type itself (request / response)
-        const newKey = key.replace(keyPrepend, '').replace(/^\./, '');
+        //strip the top level name --> nmame of the type itself (request / response)
+        const keyParts = key.split('.');
+        const newKey = keyParts.slice(1).join('.');
         sourceList.bestEffort.push(newKey);
       }
     });

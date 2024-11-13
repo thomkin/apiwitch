@@ -1,3 +1,4 @@
+import { Cookie } from 'elysia';
 import { HttpErrorMsg } from './error';
 
 export enum FrameworkId {
@@ -60,6 +61,7 @@ export interface MethodHandler {
     request: any;
     error: (code: number, message: string) => void;
     redirect: (url: string, status: 301 | 302 | 303 | 307 | 308 | undefined) => void;
+    cookie: Record<string, Cookie<string | undefined>>;
     meta: { [key: string]: any };
   }) => Promise<any>;
 }
@@ -95,14 +97,15 @@ export type AuthReturn = {
   meta?: { [key: string]: any };
 };
 
-export type AuthHandler = (authorization: string | undefined) => AuthReturn;
+export type AuthHandler = (authorization: string | undefined) => Promise<AuthReturn>;
 export type AuthHandlerMap = Map<string, AuthHandler>;
 
 export type ApiWitchRouteInput<req> = {
   request: req;
+  cookie: Record<string, Cookie<string | undefined>>;
   error: (code: number, message: string) => any;
   redirect: (url: string, status: 301 | 302 | 303 | 307 | 308 | undefined) => any;
   meta: { [key: string]: any };
 };
 
-export type ApiWitchRouteHandler = <req, res>(input: ApiWitchRouteInput<req>) => Promise<res>;
+export type ApiWitchRouteHandler = (input: ApiWitchRouteInput<any>) => Promise<any>;

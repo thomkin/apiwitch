@@ -9,6 +9,7 @@ export enum ErrorCode {
   ConfigNotFound,
   ConfigIncludeDirMissing,
   UnknownError,
+  AstParserError,
 }
 
 const { combine, timestamp, label, prettyPrint, colorize, simple } = winston.format;

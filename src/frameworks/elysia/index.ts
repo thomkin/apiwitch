@@ -1,5 +1,11 @@
 import { handleCommentInputSelect as handlePropsInputSelect } from '../../core/inputSelect';
-import { ApiwitchConfig, FrameworkContext, HttpMethods, MethodHandler } from '../../types';
+import {
+  ApiwitchConfig,
+  AuthReturn,
+  FrameworkContext,
+  HttpMethods,
+  MethodHandler,
+} from '../../types';
 import { routeRequestValidation } from '../../core/validation';
 import { Context, Elysia } from 'elysia';
 import { getAuthHandler } from '../../core/auth';
@@ -57,22 +63,31 @@ const routeHandlerWrapper = async (
     return valid.error;
   }
 
-  return handler.callback({
+  return await handler.callback({
     request: clone(valid.data),
     error: context.error,
     redirect: context.redirect,
+    cookie: context.cookie,
     meta: { ...context.store },
   });
 };
 
 const addRoute = (handler: MethodHandler, witchcraftSchemas: { [key: string]: any }) => {
-  const beforeHandle = (context: Context) => {
+  const beforeHandle = async (context: Context) => {
     //Handle Authentication
-    const authRet = getAuthHandler(handler.auth)(context?.headers?.authorization);
-    if (authRet?.error) {
-      return context.error(HttpErrorCode.Unauthorized, authRet?.error);
-    } else if (authRet.meta) {
-      context.store = authRet.meta || {};
+
+    try {
+      const authRet = await getAuthHandler(handler.auth)(context?.headers?.authorization);
+      if (authRet?.error) {
+        return context.error(HttpErrorCode.Unauthorized, authRet?.error);
+      } else if (authRet.meta) {
+        context.store = authRet.meta || {};
+      }
+    } catch (error) {
+      return context.error(HttpErrorCode.InternalServerError, {
+        message: 'An unexpected error occurred when executing the auth handler',
+        code: HttpErrorCode.InternalServerError,
+      });
     }
   };
 

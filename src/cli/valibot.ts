@@ -69,7 +69,7 @@ export class ValibotValidator {
   };
 
   private propListItemToValibotString = (obj: SchemaItem) => {
-    let output = `${!obj.required ? 'v.optional(' : ''}v.${obj.type}()${!obj.required ? ')' : ''}`;
+    let output = `${obj.isOptional ? 'v.optional(' : ''}v.${obj.type}()${obj.isOptional ? ')' : ''}`;
     return output;
   };
 

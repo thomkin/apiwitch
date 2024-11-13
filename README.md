@@ -225,3 +225,6 @@ avoid using custom data types as it is not yet able to resolve those types autom
 You can either use the **type** or **interface** keywords.
 
 # TODO
+
+- [] Check why interface do not work as Route parameters. It would be best if
+  we can make them work also because this would make the implementation of easier sometimes
