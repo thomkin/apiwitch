@@ -1,3 +1,6 @@
+import { InputSourceEnum, Schema, SchemaItem, TypeConfigItem } from './types';
+import { ErrorCode, logger } from './logger';
+
 import {
   InterfaceDeclaration,
   Node,
@@ -5,10 +8,7 @@ import {
   SyntaxKind,
   TypeAliasDeclaration,
   TypeLiteralNode,
-  TypeReferenceNode,
 } from 'ts-morph';
-import { InputSourceEnum, Schema, SchemaItem, TypeConfigItem } from './types';
-import { ErrorCode, logger } from './logger';
 
 export class AstParser {
   private rpcRequest: Schema = {
@@ -19,48 +19,6 @@ export class AstParser {
     'RpcResponse.id': { identifier: 'id', isOptional: false, type: 'number' },
     'RpcResponse.error.appCode': { identifier: 'error', isOptional: true, type: 'number' },
     'RpcResponse.error.message': { identifier: 'message', isOptional: true, type: 'string' },
-  };
-
-  private parseTypeReference = (typeRef: TypeReferenceNode | undefined) => {
-    /**case 1: type Request = {name: string};
-     *  TypeAliasDeclaration
-     *    --> Identifier
-     *    --> TypeLiteral
-     *      --> PropertySignature
-     *        --> Identifier
-     *        Then it has either an keyword defined if its a native supported type
-     *        --> StringKeyword | BooleanKeyword | NumberKeyword ::data type of the property --
-     *        or instead of the keyqord it has a type reference meaning it points to some other type
-     *
-     *
-     * case 2: type Request = RpcRequest<{session_id?: string;}>;  --> using a generic
-     *  TypeAliasDeclaration
-     *    --> Identifier
-     *    --> TypeReference   [instead of TypeLiteral it has TypeReference]
-     *      --> Identifier  :: the name of the referenced type
-     *      --> TypeLiteral
-     *          --> PropertySignature
-     *            --> identifier
-     *            --> questionToken
-     *            --> Keyword or type reference --> if reference would need to find the next
-     *
-     * We do not need to parse all possible scenarios. Only the two above cases need to be
-     * analyzed.
-     *
-     * Case 1 is already working but can maybe be improved. This is a type with
-     * no references.
-     *
-     * Case 2 is a type definition with a reference to another type. This is what
-     * we have. But we do not need to allow all possible type constructs here.
-     * We expect our reference to to be RpcRequest which we now looks like :
-     *
-     * type RpcRequest<T> = {id: number, params: T, method: string}
-     *
-     * So during the parsing if we encounter any type reference it must only be
-     * the RpcRequest id. if not we can through an error. Because we now how the
-     * type looks there is no need to find it and analyze it we can simply add it
-     * to the schema.
-     */
   };
 
   private parsePropertySignature = (signature: PropertySignature, parentName: string): Schema => {
@@ -304,8 +262,6 @@ export class AstParser {
           key: nameOfKey,
         };
 
-        console.log('Thomas --', ret);
-
         return ret;
       });
     }
@@ -318,6 +274,20 @@ export class AstParser {
     keyPrepend: string,
   ): Schema => {
     const ret = this.parseType(typeDeclaration, keyPrepend);
+    Object.keys(ret).forEach((key) => {
+      const newKey = key
+        .split('.')
+        .map((k, idx) => {
+          if (idx === 0) {
+            return keyPrepend;
+          }
+          return k;
+        })
+        .join('.');
+      ret[newKey] = ret[key];
+      delete ret[key];
+    });
+
     return ret;
   };
 }
