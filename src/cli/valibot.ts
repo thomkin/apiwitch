@@ -126,7 +126,7 @@ export class ValibotValidator {
     if (Object.keys(schema).length === 0) {
       return;
     }
-    console.log('Schema: ', JSON.stringify(schema, null, 2));
+
     const constructedConfig = Object.values(construct(schema))[0];
     const valibot = this.recursiveValibotCreator(constructedConfig, '');
     this.valibotMap[uuid + '_valibot_' + `${this.valiBotType}`] = valibot.obj;

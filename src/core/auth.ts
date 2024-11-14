@@ -3,7 +3,7 @@ import { AuthHandler, AuthReturn } from './types';
 
 const _authHandlerMap: Map<string, AuthHandler> = new Map();
 
-const handlerPlaceholder = (authorization: string | undefined): AuthReturn => {
+const handlerPlaceholder = async (authorization: string | undefined): Promise<AuthReturn> => {
   return {
     error: {
       code: CoreErrorCodes.NoAuthHandlerDefined,
@@ -24,9 +24,9 @@ export const addAuthHandler = (id: string, handler: AuthHandler) => {
   _authHandlerMap.set(id, handler);
 };
 
-export const getAuthHandler = (auth: string | boolean | undefined): AuthHandler => {
+export const getAuthHandler = (auth: string | boolean | undefined): AuthHandler | null => {
   if (typeof auth === 'string') {
-    return _authHandlerMap.get(auth) || handlerPlaceholder;
+    return _authHandlerMap.get(auth) || null;
   }
   return _authHandlerMap.get('default') || handlerPlaceholder;
 };

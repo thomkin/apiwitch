@@ -8,7 +8,7 @@ import path from 'path';
 import fs from 'fs';
 
 type MethodHandlerMustache = {
-  path: string;
+  endpoint: string;
   auth: boolean | string;
   method: string;
   uuid: string;
@@ -62,7 +62,7 @@ export class RouteFileGenerator {
       bestEffortSelect: JSON.stringify(data.bestEffortSelect || []),
       callback: data.uuid + '.callback',
       method: JSON.stringify(data.method),
-      path: JSON.stringify(data.path),
+      endpoint: JSON.stringify(data.endpoint),
       auth: data.auth ? JSON.stringify(data.auth) : true,
       uuid: JSON.stringify(data.uuid),
     };

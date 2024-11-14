@@ -46,7 +46,7 @@ export type SourceList = {
 };
 
 export type ApiWitchRouteMeta = {
-  path: string;
+  endpoint: string;
   method: string;
   auth: boolean | string;
   variableName: string; //the name of the exported variable so we know how to import

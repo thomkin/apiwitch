@@ -224,6 +224,64 @@ avoid using custom data types as it is not yet able to resolve those types autom
 
 You can either use the **type** or **interface** keywords.
 
+## Client creation
+
+TODO: at some point it would be nice if it could create client libraries
+for the specified routes as well including data validation .
+
+# RPC
+
+Apiwitch has an RPC endpoint that can be used to send JSON RPC like messages
+This can be usefull in cases where rpc interface makes more sense than a standard rest api.
+
+A RPC interface ahs the following pros:
+
+- all data comes in the body
+- everything is a POST message
+- user non HTTP interfaces like Redis pubsub for inter services comunication on a single machine
+
+Disadvantages:
+
+- we need to implement the routing by ourselves and cannot use the frameworks router capabilities.
+
+For the HTTP routes apiwitch support setting up multiple auth handlers.
+We should be reusing the same function so that we do not have to test more code.
+
+The Rpc Request and response types are defined like this:
+
+```ts
+export type RpcRequest<T> = {
+  id: number;
+  method: string;
+  authDomain: string; //auth domain that shall be used (different methods can be accessible with different auth mechanisms)
+  token: string; //format similar to HTTP auth header --> Basic|Bearer token
+  params: T;
+};
+
+export type RpcResponse<T> = {
+  id: number; //the id from the request would not be needed for HTTP but might be needed for PubSub
+  result?: T; //data depending on the request made
+  error?: {
+    appCode: number; //an application error code that could be used to query more information about the error
+    message: string; //a short message should not be too long
+  };
+};
+```
+
+Configuring a route also happens with ApiWitchRoute only thing is that the method
+is set to "rpc". For each of the auth handlers that are added we are creating
+a separate rpc endpoint so that we can use the different auth mechanisms needed
+for the application. we add the name of the auth method to the rpc url. E.g. let us say
+the name of the auth is "default" than we can access the default route rpc handlers with
+**/rpc/default** The problem with this is the callback for the route needs to know
+wich routes it can access (only those for a specific auth handler). And authentication
+parameters would need to be send over the http headers which would work against the idea
+of having it work on pubsub systems. So we register only a single rpc.
+
+I need to tell:
+
+1. which function to use to authenticate which authentication theme Bearer of Basic and the token
+
 # TODO
 
 - [] Check why interface do not work as Route parameters. It would be best if

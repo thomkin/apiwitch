@@ -1,10 +1,7 @@
-import { FrameworkId, MethodHandler, ApiwitchConfig } from './types';
+import { FrameworkId, MethodHandler, ApiwitchConfig, ApiMethods } from './types';
 import { ctx as elysiaCtx } from '../frameworks/elysia';
 import { addAuthHandler } from './auth';
-
-export let routyfastRoute = (handler: MethodHandler): void => {
-  console.error('default route handler not setup');
-};
+import { rpcAddHandler, rpcHandler } from './rpc';
 
 export const apiwitchInit = (config: ApiwitchConfig) => {
   switch (config.frameworkId) {
@@ -18,8 +15,17 @@ export const apiwitchInit = (config: ApiwitchConfig) => {
 
       //setup all the witchcraft routes --> auto generated from source code details
       config.witchcraftRoutes.forEach((route) => {
-        elysiaCtx.addRoute(route, config.witchcraftSchemas)();
+        if (route.method === ApiMethods.rpc) {
+          rpcAddHandler(route);
+        } else {
+          elysiaCtx.addRoute(route, config.witchcraftSchemas)();
+        }
       });
+
+      //setup rpc route
+      if (config.rpcConfig.enable) {
+        elysiaCtx.rpcRoute(config.rpcConfig.path, rpcHandler, config.witchcraftSchemas);
+      }
 
       break;
 

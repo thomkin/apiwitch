@@ -1,5 +1,5 @@
 import { catchError, getTypeScriptFiles, getUUID } from './utils';
-import { AutoGenMethodData, HttpMethods } from '../types';
+import { AutoGenMethodData, ApiMethods } from '../types';
 import { RouteFileGenerator } from './fileGenerator';
 import { ErrorCode, logger } from './logger';
 import { ValibotValidator, ValidBotOutputType } from './valibot';
@@ -60,8 +60,8 @@ export const run = async () => {
         const methodDateRequest: AutoGenMethodData = {
           callback: res?.config.meta.variableName,
           importPath: res?.config.srcPath,
-          path: res?.config.meta.path,
-          method: res?.config.meta.method as HttpMethods,
+          endpoint: res?.config.meta.endpoint,
+          method: res?.config.meta.method as ApiMethods,
           auth: res?.config.meta.auth,
           bestEffortSelect: res.request.sourceList.bestEffort,
           bodySelect: res.request.sourceList.body,

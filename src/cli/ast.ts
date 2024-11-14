@@ -13,7 +13,7 @@ import {
 export class AstParser {
   private rpcRequest: Schema = {
     'RpcRequest.id': { identifier: 'id', isOptional: false, type: 'number' },
-    'RpcRequest.method': { identifier: 'method', isOptional: false, type: 'string' },
+    'RpcRequest.endpoint': { identifier: 'method', isOptional: false, type: 'string' },
   };
   private rpcResponse: Schema = {
     'RpcResponse.id': { identifier: 'id', isOptional: false, type: 'number' },
@@ -88,7 +88,6 @@ export class AstParser {
 
   private parseTypeLiteral = (typeLiteral: TypeLiteralNode, finalName: string): Schema => {
     let propertyMap: { [key: string]: SchemaItem } = {};
-    console.warn(`parseTypeLiteral::The final name for this is ${finalName}`);
 
     typeLiteral.forEachChild((child) => {
       const kind = child.getKindName();

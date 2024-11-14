@@ -79,11 +79,11 @@ const processTypeOrInterface = (
 
 const apiWitchRouteMetaData = (
   dec: VariableDeclaration | undefined,
-): { method: string; path: string; auth: boolean | string } => {
+): { method: string; endpoint: string; auth: boolean | string } => {
   const paList = dec?.getDescendantsOfKind(SyntaxKind.PropertyAssignment);
-  const ret: { method: string; path: string; auth: boolean | string } = {
+  const ret: { method: string; endpoint: string; auth: boolean | string } = {
     method: 'undefined',
-    path: 'undefined',
+    endpoint: 'undefined',
     auth: true,
   } as any;
 
@@ -93,8 +93,8 @@ const apiWitchRouteMetaData = (
 
     if (key === 'method') {
       ret.method = value?.slice(1, value.length - 1) || 'undefined';
-    } else if (key === 'path') {
-      ret.path = value?.slice(1, value.length - 1) || 'undefined';
+    } else if (key === 'endpoint') {
+      ret.endpoint = value?.slice(1, value.length - 1) || 'undefined';
     } else if (key == 'auth') {
       if (value) {
         ret.auth = value?.slice(1, value.length - 1);
@@ -144,8 +144,10 @@ const findApiWitchExportedRoutes = (src: SourceFile): ApiWitchRouteExport | unde
     );
 
     meta.method = metaDataFromTs.method;
-    meta.path = metaDataFromTs.path;
+    meta.endpoint = metaDataFromTs.endpoint;
     meta.auth = metaDataFromTs.auth;
+
+    logger.info(`metadata from ts: ${JSON.stringify(metaDataFromTs)}`);
 
     hasExportedWitchRoute = true;
   }

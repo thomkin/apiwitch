@@ -3,18 +3,24 @@ import {
   ApiwitchConfig,
   AuthReturn,
   FrameworkContext,
-  HttpMethods,
+  ApiMethods,
   MethodHandler,
+  RpcRouteHandler,
+  RpcResponse,
+  RpcRequest,
 } from '../../types';
-import { routeRequestValidation } from '../../core/validation';
+import { minifyValibotError, routeRequestValidation } from '../../core/validation';
 import { Context, Elysia } from 'elysia';
 import { getAuthHandler } from '../../core/auth';
-import { HttpErrorCode } from '../../core/error';
+import { CoreErrorCodes, HttpErrorCode, HttpErrorMsg } from '../../core/error';
 import { clone } from 'radash';
 import { cors } from '@elysiajs/cors';
 
 import swagger from '@elysiajs/swagger';
 import { logger } from '../../core/logger';
+import { rpcAddHandler } from '../../core/rpc';
+import * as v from 'valibot';
+import { RpcRequestSchema } from '../../core/valibotSchemas';
 
 let _app: Elysia;
 
@@ -77,8 +83,8 @@ const addRoute = (handler: MethodHandler, witchcraftSchemas: { [key: string]: an
     //Handle Authentication
 
     try {
-      const authRet = await getAuthHandler(handler.auth)(context?.headers?.authorization);
-      if (authRet?.error) {
+      const authRet = await getAuthHandler(handler.auth)?.(context?.headers?.authorization);
+      if (!authRet || authRet?.error) {
         return context.error(HttpErrorCode.Unauthorized, authRet?.error);
       } else if (authRet.meta) {
         context.store = authRet.meta || {};
@@ -92,10 +98,12 @@ const addRoute = (handler: MethodHandler, witchcraftSchemas: { [key: string]: an
   };
 
   return (): MethodHandler => {
+    //Setup RPC
+
     switch (handler.method) {
-      case HttpMethods.get:
+      case ApiMethods.get:
         _app.get(
-          handler.path,
+          handler.endpoint,
           async (context) => {
             return routeHandlerWrapper(context, handler, witchcraftSchemas);
           },
@@ -103,9 +111,9 @@ const addRoute = (handler: MethodHandler, witchcraftSchemas: { [key: string]: an
         );
         break;
 
-      case HttpMethods.post:
+      case ApiMethods.post:
         _app.post(
-          handler.path,
+          handler.endpoint,
           async (context) => {
             return routeHandlerWrapper(context, handler, witchcraftSchemas);
           },
@@ -114,23 +122,25 @@ const addRoute = (handler: MethodHandler, witchcraftSchemas: { [key: string]: an
 
         break;
 
-      case HttpMethods.patch:
+      case ApiMethods.patch:
         _app.patch(
-          handler.path,
+          handler.endpoint,
           async (context) => {
             return routeHandlerWrapper(context, handler, witchcraftSchemas);
           },
           { beforeHandle },
         );
-
-      case HttpMethods.delete:
+        break;
+      case ApiMethods.delete:
         _app.delete(
-          handler.path,
+          handler.endpoint,
           async (context) => {
             return routeHandlerWrapper(context, handler, witchcraftSchemas);
           },
           { beforeHandle },
         );
+        break;
+
       default:
         break;
     }
@@ -138,5 +148,26 @@ const addRoute = (handler: MethodHandler, witchcraftSchemas: { [key: string]: an
   };
 };
 
+const rpcRoute = async (
+  path: string,
+  callback: RpcRouteHandler,
+  witchcraftSchemas: { [key: string]: any },
+) => {
+  _app.post(path, async (context) => {
+    const body = context.body as RpcRequest<any>;
+
+    return callback({
+      request: {
+        authorization: body.authorization,
+        endpoint: body.endpoint,
+        params: body.params,
+        id: body.id,
+      },
+      error: context.error,
+      witchcraftSchemas,
+    });
+  });
+};
+
 //Export the context of the framework for core to execute framework functions
-export const ctx: FrameworkContext = { init, addRoute };
+export const ctx: FrameworkContext = { init, addRoute, rpcRoute };

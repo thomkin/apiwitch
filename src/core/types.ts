@@ -1,4 +1,4 @@
-import { Cookie } from 'elysia';
+import { Context, Cookie } from 'elysia';
 import { HttpErrorMsg } from './error';
 
 export enum FrameworkId {
@@ -26,8 +26,21 @@ export interface ApiwitchConfig {
   frameworkConfig: FrameworkConfig;
   authHandlerMap: AuthHandlerMap;
   witchcraftRoutes: MethodHandler[];
-  witchcraftSchemas: { [key: string]: any };
+  witchcraftSchemas: WitchcraftSchemasType;
+  rpcConfig: RpcConfig;
 }
+
+export type RpcConfig = {
+  enable: boolean;
+  path: string;
+};
+export type RpcRouteHandler = (input: RpcRouteRequest) => Promise<any>;
+
+export type RpcRouteRequest = {
+  request: any;
+  error: (code: number, message: string) => void;
+  witchcraftSchemas: { [key: string]: any };
+};
 
 export type FrameworkContext = {
   //This MUST! be a synchronous function
@@ -38,19 +51,26 @@ export type FrameworkContext = {
     handler: MethodHandler,
     witchcraftSchemas: { [key: string]: any },
   ) => () => void | MethodHandler;
+
+  rpcRoute: (
+    path: string,
+    callback: RpcRouteHandler,
+    witchcraftSchemas: { [key: string]: any },
+  ) => void;
 };
 
-export enum HttpMethods {
+export enum ApiMethods {
   get = 'get',
   delete = 'delete',
   patch = 'patch',
   post = 'post',
+  rpc = 'rpc',
 }
 
-export interface MethodHandler {
-  method: HttpMethods;
-  path: string;
-  auth?: boolean | string;
+export type MethodHandler = {
+  method: ApiMethods;
+  endpoint: string; //path for http | method for rpc
+  auth: string;
   uuid: string;
   querySelect?: string[];
   bodySelect?: string[];
@@ -60,17 +80,17 @@ export interface MethodHandler {
   callback: (input: {
     request: any;
     error: (code: number, message: string) => void;
-    redirect: (url: string, status: 301 | 302 | 303 | 307 | 308 | undefined) => void;
-    cookie: Record<string, Cookie<string | undefined>>;
+    redirect?: (url: string, status: 301 | 302 | 303 | 307 | 308 | undefined) => void;
+    cookie?: Record<string, Cookie<string | undefined>>;
     meta: { [key: string]: any };
   }) => Promise<any>;
-}
+};
 
 export interface AutoGenMethodData {
   importPath: string;
-  method: HttpMethods;
+  method: ApiMethods;
   callback: string;
-  path: string;
+  endpoint: string;
   auth?: boolean | string;
   querySelect: string[];
   bodySelect: string[];
@@ -86,9 +106,9 @@ export interface AutoGenMethodData {
  * the cli code also
  */
 export interface ApiWitchRoute {
-  method: string;
-  path: string;
-  auth?: boolean | string;
+  method: 'get' | 'post' | 'delete' | 'patch' | 'rpc';
+  endpoint: string;
+  auth?: string;
   callback: ApiWitchRouteHandler;
 }
 
@@ -100,6 +120,7 @@ export type AuthReturn = {
 export type AuthHandler = (authorization: string | undefined) => Promise<AuthReturn>;
 export type AuthHandlerMap = Map<string, AuthHandler>;
 
+export type WitchcraftSchemasType = { [key: string]: any };
 export type ApiWitchRouteInput<req> = {
   request: req;
   cookie: Record<string, Cookie<string | undefined>>;
@@ -109,3 +130,28 @@ export type ApiWitchRouteInput<req> = {
 };
 
 export type ApiWitchRouteHandler = (input: ApiWitchRouteInput<any>) => Promise<any>;
+
+export type RpcRequest<T> = {
+  id: number;
+  endpoint: string;
+  authorization: string; //format similar to HTTP auth header --> Basic|Bearer token
+  params: T;
+};
+
+export interface RpcHandlerInput {
+  request: RpcRequest<any>;
+  witchcraftSchemas: { [key: string]: any };
+  uuid: string;
+  context: Context;
+}
+
+export type RpcResponse<T> = {
+  id: number; //the id from the request would not be needed for HTTP but might be needed for PubSub
+  result?: T; //data depending on the request made
+  error?: {
+    appCode: number; //an application error code that could be used to query more information about the error
+    message: string; //a short message should not be too long
+  };
+};
+
+export type WitchcraftRoute = {};

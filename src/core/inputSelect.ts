@@ -5,6 +5,7 @@ export enum BestEffortMode {
   ParamQueryBody = 'pqb',
   ParamQuery = 'pq',
   ParamBody = 'pb',
+  BodyParam = 'bp',
 }
 
 export const handleBestEffort = (input: {
@@ -20,7 +21,7 @@ export const handleBestEffort = (input: {
     input.handler.method === 'get'
       ? BestEffortMode.ParamQuery
       : input.handler.method === 'post'
-        ? BestEffortMode.ParamBody
+        ? BestEffortMode.BodyParam
         : input.handler.method === 'patch'
           ? BestEffortMode.ParamQueryBody
           : input.handler.method === 'delete'
@@ -53,8 +54,9 @@ const constructData = (data: any, selectObj: string[], output: { [key: string]: 
     const crushedBody = crush(data) as { [key: string]: any };
     const value = crushedBody[selecTKey];
 
-    let tmp = set<{ [key: string]: any }, any>({}, selecTKey, value);
-    output[selecTKey] = value;
+    if (!(selecTKey in output)) {
+      output[selecTKey] = value;
+    }
   });
 };
 
