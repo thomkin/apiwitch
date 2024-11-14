@@ -37,7 +37,7 @@ export type RpcConfig = {
 export type RpcRouteHandler = (input: RpcRouteRequest) => Promise<any>;
 
 export type RpcRouteRequest = {
-  request: any;
+  request: RpcRequest<any>;
   error: (code: number, message: string) => void;
   witchcraftSchemas: { [key: string]: any };
 };
@@ -83,7 +83,7 @@ export type MethodHandler = {
     redirect?: (url: string, status: 301 | 302 | 303 | 307 | 308 | undefined) => void;
     cookie?: Record<string, Cookie<string | undefined>>;
     meta: { [key: string]: any };
-  }) => Promise<any>;
+  }) => Promise<any | RpcReturn<any>>;
 };
 
 export interface AutoGenMethodData {
@@ -144,6 +144,14 @@ export interface RpcHandlerInput {
   uuid: string;
   context: Context;
 }
+
+export type RpcReturn<T> = {
+  result?: T; //data depending on the request made
+  error?: {
+    appCode: number; //an application error code that could be used to query more information about the error
+    message: string; //a short message should not be too long
+  };
+};
 
 export type RpcResponse<T> = {
   id: number; //the id from the request would not be needed for HTTP but might be needed for PubSub

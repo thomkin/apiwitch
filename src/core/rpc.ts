@@ -1,7 +1,8 @@
+import { MethodHandler, RpcResponse, RpcReturn, RpcRouteRequest } from './types';
+import { minifyValibotError } from './validation';
 import { getAuthHandler } from './auth';
-import { CoreError, CoreErrorCodes } from './error';
-import { MethodHandler, RpcHandlerInput, RpcRequest, RpcResponse, RpcRouteRequest } from './types';
-import { minifyValibotError, routeRequestValidation } from './validation';
+import { CoreErrorCodes } from './error';
+
 import * as v from 'valibot';
 
 //Handle the RPC mechanism using JSON RPC protocol
@@ -56,7 +57,7 @@ export const rpcHandler = async (input: RpcRouteRequest): Promise<any> => {
     return { data: {}, error: undefined };
   }
 
-  const valibot = v.safeParse(requestSchema, input.request);
+  const valibot = v.safeParse(requestSchema, { ...input.request.params });
   if (valibot.issues) {
     const res: RpcResponse<any> = {
       id: -1,
@@ -70,11 +71,17 @@ export const rpcHandler = async (input: RpcRouteRequest): Promise<any> => {
   }
 
   //if we come here we can finally call the rpc callback handler
-  const ret = await handler.callback({
+  const ret = (await handler.callback({
     error: input.error,
     meta: meta as { [key: string]: any },
     request: valibot.output,
-  });
+  })) as RpcReturn<any>;
 
-  return ret;
+  const response: RpcResponse<any> = {
+    id: input.request.id,
+    error: ret.error,
+    result: ret.result,
+  };
+
+  return response;
 };

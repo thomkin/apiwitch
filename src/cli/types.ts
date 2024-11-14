@@ -1,13 +1,3 @@
-//TODO: check that we can remove ths it seems redudnate
-// to property list
-export type IterItem = {
-  [key: string]: {
-    name?: string; //TODO: make this required !!!!
-    type: string;
-    required: boolean;
-  };
-};
-
 export type SchemaItem = {
   identifier: string;
   type: string;
@@ -25,12 +15,9 @@ export type TypeConfig = {
 
 export type TypeConfigItem = {
   inputSource: { source: InputSourceEnum; params: string | null; id: string };
-  // sourceList: SourceList;
   pipe: string[];
   key: string;
 };
-
-export type IterReturn = { [key: string]: IterItem };
 
 export type CliConfig = {
   includeDir: string;

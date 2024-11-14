@@ -1,26 +1,22 @@
 import { handleCommentInputSelect as handlePropsInputSelect } from '../../core/inputSelect';
+import { routeRequestValidation } from '../../core/validation';
+import { getAuthHandler } from '../../core/auth';
+import { HttpErrorCode } from '../../core/error';
+import { Context, Elysia } from 'elysia';
+import { cors } from '@elysiajs/cors';
+import { clone } from 'radash';
+import { logger } from '../../core/logger';
+
+import swagger from '@elysiajs/swagger';
+
 import {
   ApiwitchConfig,
-  AuthReturn,
   FrameworkContext,
   ApiMethods,
   MethodHandler,
   RpcRouteHandler,
-  RpcResponse,
   RpcRequest,
 } from '../../types';
-import { minifyValibotError, routeRequestValidation } from '../../core/validation';
-import { Context, Elysia } from 'elysia';
-import { getAuthHandler } from '../../core/auth';
-import { CoreErrorCodes, HttpErrorCode, HttpErrorMsg } from '../../core/error';
-import { clone } from 'radash';
-import { cors } from '@elysiajs/cors';
-
-import swagger from '@elysiajs/swagger';
-import { logger } from '../../core/logger';
-import { rpcAddHandler } from '../../core/rpc';
-import * as v from 'valibot';
-import { RpcRequestSchema } from '../../core/valibotSchemas';
 
 let _app: Elysia;
 

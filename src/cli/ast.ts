@@ -142,8 +142,6 @@ export class AstParser {
   private parseType = (node: Node, parentName: string): Schema => {
     let schemaMap: { [key: string]: SchemaItem } = {};
 
-    logger.warn(`parseType::start the processing`);
-
     const idf = node.getFirstChildByKind(SyntaxKind.Identifier);
     if (!idf || !idf.getText()) {
       logger.error(
@@ -272,19 +270,40 @@ export class AstParser {
     typeDeclaration: TypeAliasDeclaration | InterfaceDeclaration,
     keyPrepend: string,
   ): Schema => {
+    // const ret = this.parseType(typeDeclaration, keyPrepend);
+    // Object.keys(ret).forEach((key) => {
+    //   const newKey = key
+    //     .split('.')
+    //     .map((k, idx) => {
+    //       if (idx === 0) {
+    //         return keyPrepend;
+    //       }
+    //       return k;
+    //     })
+    //     .join('.');
+    //   ret[newKey] = ret[key];
+    //   delete ret[key];
+    // });
     const ret = this.parseType(typeDeclaration, keyPrepend);
     Object.keys(ret).forEach((key) => {
-      const newKey = key
-        .split('.')
-        .map((k, idx) => {
-          if (idx === 0) {
-            return keyPrepend;
-          }
-          return k;
-        })
-        .join('.');
-      ret[newKey] = ret[key];
-      delete ret[key];
+      if (ret[key].type === 'undefined') {
+        //this is not very nice, better not to add them in the first place
+        delete ret[key];
+      } else {
+        const newKey = key
+          .split('.')
+          .map((k, idx) => {
+            if (idx === 0) {
+              return keyPrepend;
+            }
+            return k;
+          })
+          .join('.');
+        ret[newKey] = ret[key];
+        if (newKey !== key) {
+          delete ret[key];
+        }
+      }
     });
 
     return ret;

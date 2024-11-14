@@ -1,8 +1,8 @@
 import { catchError, getTypeScriptFiles, getUUID } from './utils';
+import { ValibotValidator, ValidBotOutputType } from './valibot';
 import { AutoGenMethodData, ApiMethods } from '../types';
 import { RouteFileGenerator } from './fileGenerator';
 import { ErrorCode, logger } from './logger';
-import { ValibotValidator, ValidBotOutputType } from './valibot';
 import { startTransform } from './parser';
 import { CliConfig } from './types';
 

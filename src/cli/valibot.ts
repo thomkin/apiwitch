@@ -6,7 +6,6 @@ import Mustache from 'mustache';
 import prettier from 'prettier';
 import path from 'path';
 import fs from 'fs';
-import { logger } from './logger';
 
 export enum ValidBotOutputType {
   request = 'request',
