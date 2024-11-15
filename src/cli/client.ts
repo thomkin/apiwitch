@@ -59,9 +59,7 @@ export class RpcClientGenerator {
     const typeMap: { [key: string]: string } = {};
     const handlerMap: { [key: string]: string } = {};
 
-    if (fs.existsSync(clientDir)) {
-      fs.rmSync(clientDir);
-    }
+    fs.removeSync(clientDir);
     fs.mkdirSync(clientDir, { recursive: true });
     fs.mkdirSync(endpointDir, { recursive: true });
 
@@ -109,7 +107,7 @@ export class RpcClientGenerator {
     console.log('Handlers -->', construct(handlerMap));
     const indexTemplData: MustacheIndexData = {
       imports: this.imports.join('\n'),
-      clientTypes: JSON.stringify(construct(typeMap)).replaceAll('"', '').replaceAll(',', ' '),
+      clientTypes: JSON.stringify(construct(typeMap)).replaceAll('"', '').replaceAll(';,', ';'),
       handler: JSON.stringify(construct(handlerMap)).replaceAll('"', ''),
       //   clientTypes: this.clientType.join('\n'),
     };

@@ -1,5 +1,6 @@
 import { construct } from 'radash';
 import { RpcReturn } from 'apiwitch';
+import { initRpcClient } from './kyLib';
 
 {{{imports}}}
 
@@ -10,4 +11,8 @@ export interface ClientType
 const _client: ClientType = 
     {{{handler}}}
 
-export const client : ClientType = construct(_client) as ClientType;
+export const client = {
+    ...(construct(_client) as ClientType),
+    initRpcClient, 
+
+}

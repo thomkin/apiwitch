@@ -13,6 +13,10 @@ let kyRpcClient: KyInstance;
 
 const tokenStore: { [key: string]: string } = {};
 
+export const deleteTokenStore = (key: string) => {
+  delete tokenStore[key];
+};
+
 export const initRpcClient = (config: ClientConfig) => {
   Object.entries(config.authCredentials).forEach(([key, { authType, token }]) => {
     if (authType === AuthType.basic) {
@@ -34,7 +38,7 @@ interface KyRpcT<Params> {
   params: Params;
 }
 
-export const kyRpc = async <params, resp>(data: KyRpcT<params>): Promise<KyReturn> => {
+export const kyRpc = async <params, resp>(data: KyRpcT<params>): Promise<KyReturn<resp>> => {
   const token = tokenStore[data.authDomain];
   if (!token) {
     const noTokenFound: KyReturn<resp> = {
