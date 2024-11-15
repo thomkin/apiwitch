@@ -1,0 +1,13 @@
+import { construct } from 'radash';
+import { RpcReturn } from 'apiwitch';
+
+{{{imports}}}
+
+export interface ClientType 
+    {{{clientTypes}}}
+
+
+const _client: ClientType = 
+    {{{handler}}}
+
+export const client : ClientType = construct(_client) as ClientType;

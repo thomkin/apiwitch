@@ -120,7 +120,7 @@ const findApiWitchExportedRoutes = (src: SourceFile): ApiWitchRouteExport | unde
   for (let i = 0; i < variableStatements.length; i++) {
     const varStatement = variableStatements[i];
 
-    //Check if the variable definition is eported if not we do not need to continue
+    //Check if the variable definition is exported if not we do not need to continue
     const isExported = varStatement.getFirstModifierByKind(SyntaxKind.ExportKeyword) ? true : false;
     if (!isExported) {
       continue;
@@ -164,9 +164,7 @@ const findApiWitchExportedRoutes = (src: SourceFile): ApiWitchRouteExport | unde
 
 export const startTransform = (file: string): TransformResult | undefined => {
   const project = new Project();
-
   const src = project.addSourceFileAtPath(file);
-  const typeChecker = project.getTypeChecker();
 
   /**
    * check if the file exports any Api Witch Route object. Only then

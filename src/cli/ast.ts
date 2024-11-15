@@ -177,7 +177,7 @@ export class AstParser {
             //The return values are the types of the generic <> in the code
             //now we have to map them to the params.
             schemaMap = { ...schemaMap, ...this.mergeRpcRequestParams(typeRet) };
-          } else if (typeName?.getText() === 'RpcResponse') {
+          } else if (typeName?.getText() === 'RpcResponse' || typeName?.getText() === 'RpcReturn') {
             //same as for the response
             schemaMap = { ...schemaMap, ...this.mergeRpcResponseResult(typeRet) };
           }

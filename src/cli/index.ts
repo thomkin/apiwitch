@@ -7,6 +7,7 @@ import { startTransform } from './parser';
 import { CliConfig } from './types';
 
 import fs from 'fs-extra';
+import { RpcClientGenerator } from './client';
 
 export let cliConfig: CliConfig = { includeDir: '' };
 
@@ -48,6 +49,8 @@ export const run = async () => {
     const valibotRequest = new ValibotValidator(ValidBotOutputType.request);
     const valibotResponse = new ValibotValidator(ValidBotOutputType.response);
 
+    const clientGen = new RpcClientGenerator();
+
     tsFiles.forEach((tsFile) => {
       logger.info(`Parse file ::${tsFile}`);
       const res = startTransform(tsFile);
@@ -76,13 +79,20 @@ export const run = async () => {
         // then add pass information to valibot so that it can generate the schemas
         valibotRequest.addValibotItem(res.request.schema, uuid);
         valibotResponse.addValibotItem(res.response.schema, uuid);
+
+        //push the route information into the client generator so it can do its work
+        clientGen.addRouteExport(res.config);
       }
     });
 
     logger.info('start generating output files...');
     rfg.generate();
+
     valibotRequest.generate();
     valibotResponse.generate();
+
+    clientGen.generate();
+
     logger.info('✨🧙‍♀️ Hooray! The witch has successfully completed her latest magic spells! 🌟🔮');
   } catch (error) {
     console.log(error);

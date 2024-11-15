@@ -1,0 +1,30 @@
+import { RpcReturn } from 'apiwitch';
+import { KyReturn } from '../types'
+import { kyRpc } from '../kyLib'
+
+{{{request}}}
+
+{{{response}}}
+
+export const handler = async (data: {{{requestName}}}) : Promise<RpcReturn<{{{responseName}}}>> => {
+   const ret: KyReturn<{{{responseName}}}> = await kyRpc<{{{requestName}}}, {{{responseName}}}>({
+    params: data,
+    authDomain: '{{{authDomain}}}',
+    endpoint: '{{{endpoint}}}',
+  });
+
+  if (ret?.error) {
+    return {
+      error: {
+        appCode: ret?.error?.code || -1,
+        message: ret?.error?.message || 'unknown error occurred',
+      },
+    };
+  }
+
+  return {
+    result: (ret?.data as unknown as Response) ?? undefined,
+  };
+};
+
+
