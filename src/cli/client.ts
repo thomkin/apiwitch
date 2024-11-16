@@ -41,6 +41,24 @@ export class RpcClientGenerator {
     this.routes = [];
   };
 
+  private createTypes = (clientDir: string) => {
+    const p = './node_modules/apiwitch/src/core/error.ts';
+
+    const project = new Project();
+    const src = project.addSourceFileAtPathIfExists(p);
+
+    if (src) {
+      const e = src.getEnum('CoreErrorCodes');
+      const mustacheTypesTempl = this.readMustacheTemplate('types.ts.mustache');
+
+      const handlerFile = path.join(clientDir, `types.ts`);
+      fs.writeFileSync(
+        handlerFile,
+        Mustache.render(mustacheTypesTempl, { CoreErrorCodes: e?.getText() }),
+      );
+    }
+  };
+
   private readMustacheTemplate = (name: string): string => {
     const templatePath = path.join(__dirname, 'templates', 'client', `${name}`);
     const template = fs.readFileSync(templatePath, 'utf8');
@@ -132,5 +150,8 @@ export class RpcClientGenerator {
 
       fs.copyFileSync(filePath, destFilePath);
     });
+
+    //we need to extract the coreErrorCodes enum from the core and save it in the types file of the client
+    this.createTypes(clientDir);
   };
 }

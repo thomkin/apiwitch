@@ -1,11 +1,4 @@
-import {
-  AuthType,
-  ClientConfig,
-  ClientErrorCodes,
-  KyReturn,
-  RpcRequest,
-  RpcResponse,
-} from './types';
+import { AuthType, ClientConfig, KyReturn, RpcRequest, RpcResponse, CoreErrorCodes } from './types';
 import ky, { KyInstance } from 'ky';
 import { catchError } from './utils';
 
@@ -43,7 +36,7 @@ export const kyRpc = async <params, resp>(data: KyRpcT<params>): Promise<KyRetur
   if (!token) {
     const noTokenFound: KyReturn<resp> = {
       error: {
-        code: ClientErrorCodes.NoTokenFound, //TODO: add some error codes here for the client
+        code: CoreErrorCodes.NoTokenFound, //TODO: add some error codes here for the client
         message: 'could not find any token',
       },
     };

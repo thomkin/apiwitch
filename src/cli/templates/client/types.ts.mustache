@@ -3,12 +3,6 @@ export enum AuthType {
   basic = 'Basic',
 }
 
-export enum ClientErrorCodes {
-  ConnectionRefused = 0,
-
-  NoTokenFound = 4000,
-}
-
 export interface KyError {
   errno: number;
   code: string;
@@ -50,3 +44,6 @@ export type RpcRequest<T> = {
   authorization: string; //format similar to HTTP auth header --> Basic|Bearer token
   params: T;
 };
+
+
+ {{{CoreErrorCodes}}}

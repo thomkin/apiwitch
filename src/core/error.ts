@@ -1,13 +1,18 @@
 export enum CoreErrorCodes {
-  AuthHandlerAlreadyExists = 0,
-  NoAuthHandlerDefined,
-  ValidationFailed,
-  AuthenticationFailed,
+  AuthHandlerAlreadyExists = 1000,
+  NoAuthHandlerDefined = 1001,
+  ValidationFailed = 1002,
+  AuthenticationFailed = 1003,
 
-  RpcPacketMalformed = 1000,
-  RpcAuthNotExists,
-  RpcAuthNotAllowed,
-  RpcEndpointDoesNotExist,
+  //RPC Related codes
+  RpcPacketMalformed = 1004,
+  RpcAuthNotExists = 1005,
+  RpcAuthNotAllowed = 1006,
+  RpcEndpointDoesNotExist = 1007,
+
+  //client codes
+  ConnectionRefused = 1500,
+  NoTokenFound = 1501,
 }
 
 export enum HttpErrorCode {
