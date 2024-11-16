@@ -43,8 +43,6 @@ export class RpcClientGenerator {
 
   private readMustacheTemplate = (name: string): string => {
     const templatePath = path.join(__dirname, 'templates', 'client', `${name}`);
-
-    console.log('path #####################', templatePath);
     const template = fs.readFileSync(templatePath, 'utf8');
 
     return template;
@@ -103,8 +101,6 @@ export class RpcClientGenerator {
 
     //create the index.ts file
     const mustacheIndexTempl = this.readMustacheTemplate('index.mustache');
-
-    console.log('Handlers -->', construct(handlerMap));
     const indexTemplData: MustacheIndexData = {
       imports: this.imports.join('\n'),
       clientTypes: JSON.stringify(construct(typeMap)).replaceAll('"', '').replaceAll(';,', ';'),

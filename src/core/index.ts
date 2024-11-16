@@ -1,9 +1,9 @@
 import { FrameworkId, MethodHandler, ApiwitchConfig, ApiMethods } from './types';
 import { ctx as elysiaCtx } from '../frameworks/elysia';
 import { addAuthHandler } from './auth';
-import { rpcAddHandler, rpcHandler } from './rpc';
+import { printHandlerDetails, rpcAddHandler, rpcHandler } from './rpc';
 
-export const apiwitchInit = (config: ApiwitchConfig) => {
+export const apiwitchInit = (config: ApiwitchConfig): { info: () => void } => {
   switch (config.frameworkId) {
     case FrameworkId.elysia:
       elysiaCtx.init(config);
@@ -32,4 +32,10 @@ export const apiwitchInit = (config: ApiwitchConfig) => {
     default:
       break;
   }
+
+  return {
+    info: () => {
+      printHandlerDetails();
+    },
+  };
 };

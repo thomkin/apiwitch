@@ -8,8 +8,6 @@ export enum CoreErrorCodes {
   RpcAuthNotExists,
   RpcAuthNotAllowed,
   RpcEndpointDoesNotExist,
-
-  DbError = 2000,
 }
 
 export enum HttpErrorCode {

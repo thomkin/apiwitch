@@ -287,4 +287,4 @@ I need to tell:
 - [] Check why interface do not work as Route parameters. It would be best if
   we can make them work also because this would make the implementation of easier sometimes
 
-  - [] add a function that we can use to get all registered rpc endpoints for debugging and documentation
+- [] add a function that we can use to get all registered rpc endpoints for debugging and documentation

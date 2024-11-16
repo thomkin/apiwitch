@@ -4,6 +4,7 @@ import { getAuthHandler } from './auth';
 import { CoreErrorCodes } from './error';
 
 import * as v from 'valibot';
+import { logger } from './logger';
 
 //Handle the RPC mechanism using JSON RPC protocol
 
@@ -11,10 +12,19 @@ const rpcHandlerMap: { [key: string]: MethodHandler } = {};
 
 export const rpcAddHandler = (handler: MethodHandler) => {
   rpcHandlerMap[handler.endpoint] = { ...handler };
+  logger.debug(`Added RPC route endpoint:  ${handler.endpoint}`);
 };
 
 export const rpcRemoveHandler = (endpoint: string) => {
   delete rpcHandlerMap[endpoint];
+};
+
+export const printHandlerDetails = () => {
+  const data = Object.keys(rpcHandlerMap).map((key) => {
+    return { endpoint: rpcHandlerMap[key].endpoint };
+  });
+
+  logger.info(`handlerMap, ${JSON.stringify(data, null, 2)}`);
 };
 
 export const rpcHandler = async (input: RpcRouteRequest): Promise<any> => {
