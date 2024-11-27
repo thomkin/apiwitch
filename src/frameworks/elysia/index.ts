@@ -16,6 +16,8 @@ import {
   MethodHandler,
   RpcRouteHandler,
   RpcRequest,
+  PermissionCheck,
+  AuthReturn,
 } from '../../types';
 
 let _app: Elysia;
@@ -74,12 +76,16 @@ const routeHandlerWrapper = async (
   });
 };
 
-const addRoute = (handler: MethodHandler, witchcraftSchemas: { [key: string]: any }) => {
+const addRoute = (
+  handler: MethodHandler,
+  witchcraftSchemas: { [key: string]: any },
+  permissionCheck?: PermissionCheck,
+) => {
   const beforeHandle = async (context: Context) => {
     //Handle Authentication
-
+    let authRet: AuthReturn | undefined;
     try {
-      const authRet = await getAuthHandler(handler.auth)?.(context?.headers?.authorization);
+      authRet = await getAuthHandler(handler.auth)?.(context?.headers?.authorization);
       if (!authRet || authRet?.error) {
         return context.error(HttpErrorCode.Unauthorized, authRet?.error);
       } else if (authRet.meta) {
@@ -90,6 +96,16 @@ const addRoute = (handler: MethodHandler, witchcraftSchemas: { [key: string]: an
         message: 'An unexpected error occurred when executing the auth handler',
         code: HttpErrorCode.InternalServerError,
       });
+    }
+
+    //handle user specific permission check.
+    if (permissionCheck) {
+      if (!permissionCheck(authRet?.meta?.['userId'], handler.permission)) {
+        return context.error(HttpErrorCode.Forbidden, {
+          message: 'User permission check failed',
+          code: HttpErrorCode.Forbidden,
+        });
+      }
     }
   };
 
@@ -148,6 +164,7 @@ const rpcRoute = async (
   path: string,
   callback: RpcRouteHandler,
   witchcraftSchemas: { [key: string]: any },
+  permissionCheck?: PermissionCheck,
 ) => {
   _app.post(path, async (context) => {
     const body = context.body as RpcRequest<any>;
@@ -161,6 +178,7 @@ const rpcRoute = async (
       },
       error: context.error,
       witchcraftSchemas,
+      permissionCheck,
     });
   });
 };

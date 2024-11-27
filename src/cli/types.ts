@@ -1,7 +1,9 @@
 export type SchemaItem = {
   identifier: string;
   type: string;
+  isArray: boolean;
   isOptional?: boolean;
+
   ignore?: boolean;
 };
 
@@ -22,6 +24,7 @@ export type TypeConfigItem = {
 export type CliConfig = {
   includeDir: string;
   routeAddFctName?: string;
+  clientCopyDir?: string[];
 };
 
 export type SourceList = {
@@ -36,6 +39,7 @@ export type ApiWitchRouteMeta = {
   endpoint: string;
   method: string;
   auth: boolean | string;
+  permission?: string;
   variableName: string; //the name of the exported variable so we know how to import
 };
 

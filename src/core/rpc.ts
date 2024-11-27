@@ -1,10 +1,10 @@
-import { MethodHandler, RpcResponse, RpcReturn, RpcRouteRequest } from './types';
+import { MethodHandler, PermissionCheck, RpcResponse, RpcReturn, RpcRouteRequest } from './types';
 import { minifyValibotError } from './validation';
 import { getAuthHandler } from './auth';
 import { CoreErrorCodes } from './error';
 
 import * as v from 'valibot';
-import { logger } from './logger';
+import { ErrorCode, logger } from './logger';
 
 //Handle the RPC mechanism using JSON RPC protocol
 
@@ -56,9 +56,27 @@ export const rpcHandler = async (input: RpcRouteRequest): Promise<any> => {
       id: -1,
       error: {
         appCode: CoreErrorCodes.RpcAuthNotAllowed,
-        message: `no permission to access the endpoint`,
+        message: error.message,
       },
     };
+  }
+
+  //if we come here it means we are using correct access token but we have not checked yet if
+  //the user has permission
+  //handle user specific permission check.
+  if (input.permissionCheck) {
+    const ok = await input.permissionCheck(meta?.['userId'], handler.permission);
+    if (!ok) {
+      const res: RpcResponse<any> = {
+        id: -1,
+        error: {
+          appCode: CoreErrorCodes.PermissionCheckFailed,
+          message: 'User permission check failed',
+        },
+      };
+
+      return res;
+    }
   }
 
   //now we can verify the parameters

@@ -72,8 +72,9 @@ export class ValibotValidator {
     return output;
   };
 
-  private valibotListToObject = (list: any, required: boolean) => {
+  private valibotListToObject = (list: any, required: boolean, isArray: boolean) => {
     let data = required ? `v.object({` : `v.optional(v.object({`;
+
     Object.keys(list).forEach((key, idx) => {
       const item = list[key];
       if (idx < Object.keys(list).length - 1) {
@@ -85,6 +86,10 @@ export class ValibotValidator {
 
     data += required ? '})' : '}))';
 
+    if (isArray) {
+      data = `v.array(${data})`;
+    }
+
     return data;
   };
 
@@ -93,6 +98,7 @@ export class ValibotValidator {
     indentName: string,
   ): { last: boolean; obj: string | undefined } => {
     const valibotList: any = {};
+    let isArray: boolean = false;
 
     for (let i = 0; i < Object?.keys(data)?.length; i++) {
       const key = Object.keys(data)[i];
@@ -102,8 +108,12 @@ export class ValibotValidator {
         const tmpName = indentName.length ? indentName + '.' : '';
         const ret = this.recursiveValibotCreator(data[key], tmpName + key);
         if (ret.obj) {
+          //are we ever going in here? return obj is always undefined?
           valibotList[key] = ret.obj;
         } else if (ret.last) {
+          if (data[key].isArray) {
+            isArray = true;
+          }
           valibotList[key] = this.propListItemToValibotString(data[key]);
         }
       } else {
@@ -115,6 +125,7 @@ export class ValibotValidator {
     this.valibodObject[indentName] = this.valibotListToObject(
       valibotList,
       indentName.endsWith('?') ? false : true,
+      isArray,
     );
 
     return { last: false, obj: this.valibodObject[indentName] };
@@ -127,6 +138,7 @@ export class ValibotValidator {
     }
 
     const constructedConfig = Object.values(construct(schema))[0];
+
     const valibot = this.recursiveValibotCreator(constructedConfig, '');
     this.valibotMap[uuid + '_valibot_' + `${this.valiBotType}`] = valibot.obj;
     return;

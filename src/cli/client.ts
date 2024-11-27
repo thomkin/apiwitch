@@ -31,6 +31,24 @@ export class RpcClientGenerator {
   private routes: ApiWitchRouteExport[] = [];
   private imports: string[] = [];
   private clientType: string[] = [];
+  private copyDir: string[] = [];
+  private outDir: string = '';
+  private clientDir: string = '';
+
+  private getTypeFromFile = (path: string, name: string): string | null => {
+    const project = new Project();
+    const src = project.addSourceFileAtPathIfExists(path);
+
+    const type = src?.getTypeAlias(name);
+    return type ? type.getText() : null;
+  };
+
+  private getEnumFromFile = (path: string, name: string): string | null => {
+    const project = new Project();
+    const src = project.addSourceFileAtPathIfExists(path);
+    const e = src?.getEnum(name);
+    return e ? e.getText() : null;
+  };
 
   addRouteExport = (route: ApiWitchRouteExport) => {
     if (route.meta.method === ApiMethods.rpc) {
@@ -42,21 +60,21 @@ export class RpcClientGenerator {
   };
 
   private createTypes = (clientDir: string) => {
-    const p = './node_modules/apiwitch/src/core/error.ts';
+    const ep = './node_modules/apiwitch/src/core/error.ts';
+    const e = this.getEnumFromFile(ep, 'CoreErrorCodes');
 
-    const project = new Project();
-    const src = project.addSourceFileAtPathIfExists(p);
+    //Danamically get the types from the main files, so if they change client will
+    //have the correact types as well: TODO: do this with all types at some point
+    const tp = './node_modules/apiwitch/src/core/types.ts';
+    const t = this.getTypeFromFile(tp, 'RpcReturn');
 
-    if (src) {
-      const e = src.getEnum('CoreErrorCodes');
-      const mustacheTypesTempl = this.readMustacheTemplate('types.ts.mustache');
+    const mustacheTypesTempl = this.readMustacheTemplate('types.ts.mustache');
 
-      const handlerFile = path.join(clientDir, `types.ts`);
-      fs.writeFileSync(
-        handlerFile,
-        Mustache.render(mustacheTypesTempl, { CoreErrorCodes: e?.getText() }),
-      );
-    }
+    const handlerFile = path.join(clientDir, `types.ts`);
+    fs.writeFileSync(
+      handlerFile,
+      Mustache.render(mustacheTypesTempl, { CoreErrorCodes: e, RpcReturn: t }),
+    );
   };
 
   private readMustacheTemplate = (name: string): string => {
@@ -66,9 +84,22 @@ export class RpcClientGenerator {
     return template;
   };
 
-  generate = async () => {
+  private copyTo = () => {
+    this.copyDir.forEach((path) => {
+      //first copy the client
+      fs.copySync(this.clientDir, path);
+    });
+  };
+
+  generate = async (copyDir: string[]) => {
+    this.copyDir = copyDir;
+
     const outDir = path.join(process.cwd(), cliConfig.includeDir, 'witchcraft');
+    this.outDir = outDir;
+
     const clientDir = path.join(outDir, 'client');
+    this.clientDir = clientDir;
+
     const endpointDir = path.join(clientDir, 'endpoints');
 
     //<req, resp>(data: req) => Promise<resp>
@@ -153,5 +184,8 @@ export class RpcClientGenerator {
 
     //we need to extract the coreErrorCodes enum from the core and save it in the types file of the client
     this.createTypes(clientDir);
+
+    //If user wants we can copy the client code to specified output directories
+    this.copyTo();
   };
 }

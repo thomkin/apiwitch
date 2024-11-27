@@ -18,6 +18,7 @@ type MethodHandlerMustache = {
   headerSelect: string;
   bodySelect: string;
   bestEffortSelect: string;
+  permission?: string;
 };
 
 type ImportMustache = {
@@ -60,12 +61,17 @@ export class RouteFileGenerator {
       paramSelect: JSON.stringify(data.paramSelect || []),
       headerSelect: JSON.stringify(data.headerSelect || []),
       bestEffortSelect: JSON.stringify(data.bestEffortSelect || []),
+
       callback: data.uuid + '.callback',
       method: JSON.stringify(data.method),
       endpoint: JSON.stringify(data.endpoint),
       auth: data.auth ? JSON.stringify(data.auth) : true,
       uuid: JSON.stringify(data.uuid),
     };
+
+    if (data.permission) {
+      methodHandlerData.permission = ', permission: ' + JSON.stringify(data.permission);
+    }
 
     this.methods.push(Mustache.render(methodHandlerTemp, methodHandlerData));
 

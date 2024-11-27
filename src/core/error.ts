@@ -3,12 +3,13 @@ export enum CoreErrorCodes {
   NoAuthHandlerDefined = 1001,
   ValidationFailed = 1002,
   AuthenticationFailed = 1003,
+  PermissionCheckFailed = 1004,
 
   //RPC Related codes
-  RpcPacketMalformed = 1004,
-  RpcAuthNotExists = 1005,
-  RpcAuthNotAllowed = 1006,
-  RpcEndpointDoesNotExist = 1007,
+  RpcPacketMalformed = 1100,
+  RpcAuthNotExists = 1101,
+  RpcAuthNotAllowed = 1102,
+  RpcEndpointDoesNotExist = 1103,
 
   //client codes
   ConnectionRefused = 1500,

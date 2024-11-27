@@ -18,13 +18,18 @@ export const apiwitchInit = (config: ApiwitchConfig): { info: () => void } => {
         if (route.method === ApiMethods.rpc) {
           rpcAddHandler(route);
         } else {
-          elysiaCtx.addRoute(route, config.witchcraftSchemas)();
+          elysiaCtx.addRoute(route, config.witchcraftSchemas, config.permissionCheck)();
         }
       });
 
       //setup rpc route
       if (config.rpcConfig.enable) {
-        elysiaCtx.rpcRoute(config.rpcConfig.path, rpcHandler, config.witchcraftSchemas);
+        elysiaCtx.rpcRoute(
+          config.rpcConfig.path,
+          rpcHandler,
+          config.witchcraftSchemas,
+          config.permissionCheck,
+        );
       }
 
       break;

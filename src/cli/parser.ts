@@ -1,7 +1,7 @@
 import { logger, ErrorCode } from './logger';
 import { cliConfig } from './index';
 import { AstParser } from './ast';
-import { cwd } from 'process';
+import { cwd, permission } from 'process';
 import path from 'path';
 
 import {
@@ -63,8 +63,10 @@ const processTypeOrInterface = (
       } else {
         //strip the top level name --> nmame of the type itself (request / response)
         const keyParts = key.split('.');
-        const newKey = keyParts.slice(1).join('.');
-        sourceList.bestEffort.push(newKey);
+        const newKey = keyParts[1];
+        if (!sourceList.bestEffort.includes(newKey)) {
+          sourceList.bestEffort.push(newKey);
+        }
       }
     });
 
@@ -79,12 +81,14 @@ const processTypeOrInterface = (
 
 const apiWitchRouteMetaData = (
   dec: VariableDeclaration | undefined,
-): { method: string; endpoint: string; auth: boolean | string } => {
+): { method: string; endpoint: string; auth: boolean | string; permission?: string } => {
   const paList = dec?.getDescendantsOfKind(SyntaxKind.PropertyAssignment);
-  const ret: { method: string; endpoint: string; auth: boolean | string } = {
+
+  const ret: { method: string; endpoint: string; auth: boolean | string; permission?: string } = {
     method: 'undefined',
     endpoint: 'undefined',
     auth: true,
+    // permissions: [],
   } as any;
 
   paList?.forEach((pa) => {
@@ -102,6 +106,8 @@ const apiWitchRouteMetaData = (
         const value = pa.getFirstChildByKind(SyntaxKind.TrueKeyword)?.getText();
         ret.auth = value === 'true' ? true : false;
       }
+    } else if (key === 'permission') {
+      ret.permission = value?.slice(1, value.length - 1) || 'undefined';
     }
   });
 
@@ -146,7 +152,7 @@ const findApiWitchExportedRoutes = (src: SourceFile): ApiWitchRouteExport | unde
     meta.method = metaDataFromTs.method;
     meta.endpoint = metaDataFromTs.endpoint;
     meta.auth = metaDataFromTs.auth;
-
+    meta.permission = metaDataFromTs.permission;
     logger.info(`metadata from ts: ${JSON.stringify(metaDataFromTs)}`);
 
     hasExportedWitchRoute = true;

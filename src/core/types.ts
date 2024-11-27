@@ -28,6 +28,7 @@ export interface ApiwitchConfig {
   witchcraftRoutes: MethodHandler[];
   witchcraftSchemas: WitchcraftSchemasType;
   rpcConfig: RpcConfig;
+  permissionCheck?: PermissionCheck; //for the auth check to work, the user must return userId key in the meta field of the auth handler otherwise this is ignored also
 }
 
 export type RpcConfig = {
@@ -40,6 +41,7 @@ export type RpcRouteRequest = {
   request: RpcRequest<any>;
   error: (code: number, message: string) => void;
   witchcraftSchemas: { [key: string]: any };
+  permissionCheck?: PermissionCheck;
 };
 
 export type FrameworkContext = {
@@ -50,14 +52,21 @@ export type FrameworkContext = {
   addRoute: (
     handler: MethodHandler,
     witchcraftSchemas: { [key: string]: any },
+    permissionCheck?: PermissionCheck,
   ) => () => void | MethodHandler;
 
   rpcRoute: (
     path: string,
     callback: RpcRouteHandler,
     witchcraftSchemas: { [key: string]: any },
+    permissionCheck?: PermissionCheck,
   ) => void;
 };
+
+export type PermissionCheck = (
+  userId: string | undefined,
+  perm: string | undefined,
+) => Promise<boolean>; //true mean allow, false means no permission
 
 export enum ApiMethods {
   get = 'get',
@@ -72,6 +81,7 @@ export type MethodHandler = {
   endpoint: string; //path for http | method for rpc
   auth: string;
   uuid: string;
+  permission?: string;
   querySelect?: string[];
   bodySelect?: string[];
   paramSelect?: string[];
@@ -97,6 +107,7 @@ export interface AutoGenMethodData {
   paramSelect: string[];
   headerSelect: string[];
   bestEffortSelect: string[];
+  permission?: string;
   uuid: string;
 }
 
@@ -109,6 +120,7 @@ export interface ApiWitchRoute {
   method: 'get' | 'post' | 'delete' | 'patch' | 'rpc';
   endpoint: string;
   auth?: string;
+  permission?: string; //set a set of permission names passed to the permission middle ware
   callback: ApiWitchRouteHandler;
 }
 

@@ -1,4 +1,12 @@
-import { AuthType, ClientConfig, KyReturn, RpcRequest, RpcResponse, CoreErrorCodes } from './types';
+import {
+  AuthType,
+  ClientConfig,
+  KyReturn,
+  RpcRequest,
+  RpcResponse,
+  CoreErrorCodes,
+  AuthCredentials,
+} from './types';
 import ky, { KyInstance } from 'ky';
 import { catchError } from './utils';
 
@@ -6,18 +14,23 @@ let kyRpcClient: KyInstance;
 
 const tokenStore: { [key: string]: string } = {};
 
-export const deleteTokenStore = (key: string) => {
+export const deleteTokenFromStore = (key: string) => {
   delete tokenStore[key];
 };
 
+export const updateOrCreateToken = (key: string, cred: AuthCredentials) => {
+  if (cred.authType === AuthType.basic) {
+    // token = Buffer.from(token).toString('base64');
+    cred.token = btoa(cred.token);
+    tokenStore[key] = `Basic ${cred.token}`;
+  } else if (cred.authType === AuthType.bearer) {
+    tokenStore[key] = `Bearer ${cred.token}`;
+  }
+};
+
 export const initRpcClient = (config: ClientConfig) => {
-  Object.entries(config.authCredentials).forEach(([key, { authType, token }]) => {
-    if (authType === AuthType.basic) {
-      token = Buffer.from(token).toString('base64');
-      tokenStore[key] = `Basic ${token}`;
-    } else if (authType === AuthType.bearer) {
-      tokenStore[key] = `Bearer ${token}`;
-    }
+  Object.entries(config.authCredentials).forEach(([key, cred]) => {
+    updateOrCreateToken(key, cred);
   });
 
   kyRpcClient = ky.create({

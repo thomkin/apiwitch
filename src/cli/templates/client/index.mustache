@@ -1,6 +1,24 @@
-import { construct } from 'radash';
-import { RpcReturn } from 'apiwitch';
+import { RpcReturn } from './types';
 import { initRpcClient } from './kyLib';
+
+const construct = (obj: { [key: string]: any }): { [key: string]: any } => {
+  const result: { [key: string]: any } = {};
+  Object.keys(obj).forEach((key: string) => {
+    const keys: string[] = key.split('.');
+    const value: any = obj[key];
+    let current: { [key: string]: any } = result;
+    keys.forEach((key: string, index: number) => {
+      if (index === keys.length - 1) {
+        current[key] = value;
+      } else {
+        current[key] = current[key] || {};
+        current = current[key];
+      }
+    });
+  });
+  return result;
+};
+
 
 {{{imports}}}
 

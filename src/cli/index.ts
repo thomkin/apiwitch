@@ -71,6 +71,7 @@ export const run = async () => {
           headerSelect: res.request.sourceList.header,
           paramSelect: res.request.sourceList.params,
           querySelect: res.request.sourceList.query,
+          permission: res.config.meta.permission,
           uuid: uuid,
         };
 
@@ -91,7 +92,7 @@ export const run = async () => {
     valibotRequest.generate();
     valibotResponse.generate();
 
-    clientGen.generate();
+    clientGen.generate(cliConfig.clientCopyDir || []);
 
     logger.info('✨🧙‍♀️ Hooray! The witch has successfully completed her latest magic spells! 🌟🔮');
   } catch (error) {

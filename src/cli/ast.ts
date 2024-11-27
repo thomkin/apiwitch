@@ -12,16 +12,35 @@ import {
 
 export class AstParser {
   private rpcRequest: Schema = {
-    'RpcRequest.id': { identifier: 'id', isOptional: false, type: 'number' },
-    'RpcRequest.endpoint': { identifier: 'method', isOptional: false, type: 'string' },
+    'RpcRequest.id': { identifier: 'id', isOptional: false, type: 'number', isArray: false },
+    'RpcRequest.endpoint': {
+      identifier: 'method',
+      isOptional: false,
+      type: 'string',
+      isArray: false,
+    },
   };
   private rpcResponse: Schema = {
-    'RpcResponse.id': { identifier: 'id', isOptional: false, type: 'number' },
-    'RpcResponse.error.appCode': { identifier: 'error', isOptional: true, type: 'number' },
-    'RpcResponse.error.message': { identifier: 'message', isOptional: true, type: 'string' },
+    'RpcResponse.id': { identifier: 'id', isOptional: false, type: 'number', isArray: false },
+    'RpcResponse.error.appCode': {
+      identifier: 'error',
+      isOptional: true,
+      type: 'number',
+      isArray: false,
+    },
+    'RpcResponse.error.message': {
+      identifier: 'message',
+      isOptional: true,
+      type: 'string',
+      isArray: false,
+    },
   };
 
-  private parsePropertySignature = (signature: PropertySignature, parentName: string): Schema => {
+  private parsePropertySignature = (
+    signature: PropertySignature,
+    parentName: string,
+    isArray: boolean,
+  ): Schema => {
     let propertyMap: { [key: string]: SchemaItem } = {};
     let identifier = '';
 
@@ -40,6 +59,7 @@ export class AstParser {
       isOptional: false,
       type: 'undefined',
       identifier: 'undefined',
+      isArray: isArray,
     };
 
     propertyMap[finalName].identifier = idf.getText();
@@ -68,14 +88,21 @@ export class AstParser {
         case SyntaxKind.PropertySignature:
           //It will have this if is something like type alfred = {user: {home: sting}}
           //in this case parse the TypeLiteral recursively to find all the other items
-          const ret = this.parseTypeLiteral(child as TypeLiteralNode, finalName);
+          const ret = this.parseTypeLiteral(child as TypeLiteralNode, finalName, false);
           //TODO: when is this needed?
           break;
 
         case SyntaxKind.TypeLiteral:
-          const pm = this.parseTypeLiteral(child as TypeLiteralNode, finalName);
+          const pm = this.parseTypeLiteral(child as TypeLiteralNode, finalName, false);
 
           propertyMap = { ...propertyMap, ...pm };
+          break;
+
+        case SyntaxKind.ArrayType:
+          const arrayType = child.getFirstChildByKind(SyntaxKind.TypeLiteral);
+          const at = this.parseTypeLiteral(arrayType as TypeLiteralNode, finalName, true);
+
+          propertyMap = { ...propertyMap, ...at };
           break;
 
         default:
@@ -86,7 +113,11 @@ export class AstParser {
     return propertyMap;
   };
 
-  private parseTypeLiteral = (typeLiteral: TypeLiteralNode, finalName: string): Schema => {
+  private parseTypeLiteral = (
+    typeLiteral: TypeLiteralNode,
+    finalName: string,
+    isArray: boolean,
+  ): Schema => {
     let propertyMap: { [key: string]: SchemaItem } = {};
 
     typeLiteral.forEachChild((child) => {
@@ -95,7 +126,7 @@ export class AstParser {
         case SyntaxKind.PropertySignature:
           propertyMap = {
             ...propertyMap,
-            ...this.parsePropertySignature(child as PropertySignature, finalName),
+            ...this.parsePropertySignature(child as PropertySignature, finalName, isArray),
           };
 
         default:
@@ -157,13 +188,14 @@ export class AstParser {
 
     node.forEachChild((child) => {
       const kind = child.getKindName();
+
       switch (child.getKind()) {
         case SyntaxKind.TypeLiteral:
           //We found a type literal so it means at least the first level of the
           //type is a native type without references
           schemaMap = {
             ...schemaMap,
-            ...this.parseTypeLiteral(child as TypeLiteralNode, finalName),
+            ...this.parseTypeLiteral(child as TypeLiteralNode, finalName, false),
           };
           break;
         case SyntaxKind.TypeReference:
@@ -181,6 +213,7 @@ export class AstParser {
             //same as for the response
             schemaMap = { ...schemaMap, ...this.mergeRpcResponseResult(typeRet) };
           }
+          break;
 
         //all other detected types we ignore
 
@@ -270,20 +303,6 @@ export class AstParser {
     typeDeclaration: TypeAliasDeclaration | InterfaceDeclaration,
     keyPrepend: string,
   ): Schema => {
-    // const ret = this.parseType(typeDeclaration, keyPrepend);
-    // Object.keys(ret).forEach((key) => {
-    //   const newKey = key
-    //     .split('.')
-    //     .map((k, idx) => {
-    //       if (idx === 0) {
-    //         return keyPrepend;
-    //       }
-    //       return k;
-    //     })
-    //     .join('.');
-    //   ret[newKey] = ret[key];
-    //   delete ret[key];
-    // });
     const ret = this.parseType(typeDeclaration, keyPrepend);
     Object.keys(ret).forEach((key) => {
       if (ret[key].type === 'undefined') {

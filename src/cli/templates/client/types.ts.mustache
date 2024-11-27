@@ -38,12 +38,8 @@ export type RpcResponse<T> = {
   };
 };
 
-export type RpcRequest<T> = {
-  id: number;
-  endpoint: string;
-  authorization: string; //format similar to HTTP auth header --> Basic|Bearer token
-  params: T;
-};
+
+{{{RpcReturn}}}
 
 
- {{{CoreErrorCodes}}}
+{{{CoreErrorCodes}}}
