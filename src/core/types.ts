@@ -1,4 +1,4 @@
-import { Context, Cookie } from 'elysia';
+import Elysia, { Context, Cookie } from 'elysia';
 import { HttpErrorMsg } from './error';
 
 export enum FrameworkId {
@@ -50,16 +50,18 @@ export type RpcRouteRequest = {
 
 export type FrameworkContext = {
   //This MUST! be a synchronous function
-  init: (config: ApiwitchConfig) => void;
+  init: (config: ApiwitchConfig) => Elysia;
 
   //Function must return another function that when called will only trigger the adding
   addRoute: (
+    app: Elysia,
     handler: MethodHandler,
     witchcraftSchemas: { [key: string]: any },
     permissionCheck?: PermissionCheck,
   ) => () => void | MethodHandler;
 
   rpcRoute: (
+    app: Elysia,
     path: string,
     callback: RpcRouteHandler,
     witchcraftSchemas: { [key: string]: any },

@@ -20,31 +20,33 @@ import {
   AuthReturn,
 } from '../../types';
 
-let _app: Elysia;
+// let _app: Elysia;
 
-const init = (config: ApiwitchConfig) => {
+const init = (config: ApiwitchConfig): Elysia => {
+  let appCfg: any = {};
+
   if (config.sslConfig) {
     console.log('running with ssl');
-    const app = new Elysia({
+    appCfg = {
       serve: {
         tls: {
           cert: config.sslConfig.cert,
           key: config.sslConfig.key,
         },
       },
-    });
-    _app = app;
+    };
   } else {
-    const app = new Elysia();
-    _app = app;
+    appCfg = {};
   }
 
+  const app = new Elysia(appCfg);
+
   //setup cors
-  _app.use(cors(config.frameworkConfig.cors));
+  app.use(cors(config.frameworkConfig.cors));
 
   //add the routes
   if (process.env.ENVIRONMENT === 'dev' && config.frameworkConfig.swagger) {
-    _app.use(
+    app.use(
       swagger({
         path: config.frameworkConfig.swagger?.path,
       }),
@@ -52,7 +54,9 @@ const init = (config: ApiwitchConfig) => {
   }
 
   logger.info(` Server started on port ${config.frameworkConfig.port}`);
-  _app.listen(config.frameworkConfig.port);
+  app.listen(config.frameworkConfig.port);
+
+  return app;
 };
 
 const routeHandlerWrapper = async (
@@ -90,6 +94,7 @@ const routeHandlerWrapper = async (
 };
 
 const addRoute = (
+  app: Elysia,
   handler: MethodHandler,
   witchcraftSchemas: { [key: string]: any },
   permissionCheck?: PermissionCheck,
@@ -127,7 +132,7 @@ const addRoute = (
 
     switch (handler.method) {
       case ApiMethods.get:
-        _app.get(
+        app.get(
           handler.endpoint,
           async (context) => {
             return routeHandlerWrapper(context, handler, witchcraftSchemas);
@@ -137,7 +142,7 @@ const addRoute = (
         break;
 
       case ApiMethods.post:
-        _app.post(
+        app.post(
           handler.endpoint,
           async (context) => {
             return routeHandlerWrapper(context, handler, witchcraftSchemas);
@@ -148,7 +153,7 @@ const addRoute = (
         break;
 
       case ApiMethods.patch:
-        _app.patch(
+        app.patch(
           handler.endpoint,
           async (context) => {
             return routeHandlerWrapper(context, handler, witchcraftSchemas);
@@ -157,7 +162,7 @@ const addRoute = (
         );
         break;
       case ApiMethods.delete:
-        _app.delete(
+        app.delete(
           handler.endpoint,
           async (context) => {
             return routeHandlerWrapper(context, handler, witchcraftSchemas);
@@ -174,12 +179,13 @@ const addRoute = (
 };
 
 const rpcRoute = async (
+  app: Elysia,
   path: string,
   callback: RpcRouteHandler,
   witchcraftSchemas: { [key: string]: any },
   permissionCheck?: PermissionCheck,
 ) => {
-  _app.post(path, async (context) => {
+  app.post(path, async (context) => {
     const body = context.body as RpcRequest<any>;
 
     return callback({
