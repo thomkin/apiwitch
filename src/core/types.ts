@@ -28,6 +28,10 @@ export interface ApiwitchConfig {
   witchcraftRoutes: MethodHandler[];
   witchcraftSchemas: WitchcraftSchemasType;
   rpcConfig: RpcConfig;
+  sslConfig?: {
+    cert: string;
+    key: string;
+  };
   permissionCheck?: PermissionCheck; //for the auth check to work, the user must return userId key in the meta field of the auth handler otherwise this is ignored also
 }
 

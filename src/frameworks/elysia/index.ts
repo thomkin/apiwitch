@@ -23,22 +23,35 @@ import {
 let _app: Elysia;
 
 const init = (config: ApiwitchConfig) => {
-  const app = new Elysia();
-  _app = app;
+  if (config.sslConfig) {
+    console.log('running with ssl');
+    const app = new Elysia({
+      serve: {
+        tls: {
+          cert: config.sslConfig.cert,
+          key: config.sslConfig.key,
+        },
+      },
+    });
+    _app = app;
+  } else {
+    const app = new Elysia();
+    _app = app;
+  }
 
   //setup cors
-  app.use(cors(config.frameworkConfig.cors));
+  _app.use(cors(config.frameworkConfig.cors));
 
   //add the routes
   if (process.env.ENVIRONMENT === 'dev' && config.frameworkConfig.swagger) {
-    app.use(
+    _app.use(
       swagger({
         path: config.frameworkConfig.swagger?.path,
       }),
     );
   }
 
-  logger.info(`Server started on port ${config.frameworkConfig.port}`);
+  logger.info(` Server started on port ${config.frameworkConfig.port}`);
   _app.listen(config.frameworkConfig.port);
 };
 
