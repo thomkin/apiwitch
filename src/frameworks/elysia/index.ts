@@ -30,8 +30,8 @@ const init = (config: ApiwitchConfig): Elysia => {
     appCfg = {
       serve: {
         tls: {
-          cert: config.sslConfig.cert,
-          key: config.sslConfig.key,
+          cert: Bun.file(config.sslConfig.cert),
+          key: Bun.file(config.sslConfig.key),
         },
       },
     };
