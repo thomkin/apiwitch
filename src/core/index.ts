@@ -2,6 +2,7 @@ import { FrameworkId, MethodHandler, ApiwitchConfig, ApiMethods } from './types'
 import { ctx as elysiaCtx } from '../frameworks/elysia';
 import { addAuthHandler } from './auth';
 import { printHandlerDetails, rpcAddHandler, rpcHandler } from './rpc';
+import { logger } from './logger';
 
 export const apiwitchInit = (config: ApiwitchConfig): { info: () => void } => {
   switch (config.frameworkId) {
@@ -32,6 +33,9 @@ export const apiwitchInit = (config: ApiwitchConfig): { info: () => void } => {
           config.permissionCheck,
         );
       }
+
+      logger.info(` Server started on port ${config.frameworkConfig.port}`);
+      app.listen(config.frameworkConfig.port);
 
       break;
 

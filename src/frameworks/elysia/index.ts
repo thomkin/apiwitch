@@ -53,9 +53,6 @@ const init = (config: ApiwitchConfig): Elysia => {
     );
   }
 
-  logger.info(` Server started on port ${config.frameworkConfig.port}`);
-  app.listen(config.frameworkConfig.port);
-
   return app;
 };
 
