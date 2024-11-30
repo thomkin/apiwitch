@@ -7,6 +7,7 @@ import { ApiMethods } from '../types';
 import { cliConfig } from '.';
 import { camel, construct } from 'radash';
 import prettier from 'prettier';
+import { logger } from './logger';
 
 interface MustacheHandleData {
   request: string;
@@ -87,7 +88,11 @@ export class RpcClientGenerator {
   private copyTo = () => {
     this.copyDir.forEach((path) => {
       //first copy the client
-      fs.copySync(this.clientDir, path);
+      if (!fs.existsSync(path)) {
+        logger.warn(`Directory ${path} does not exist. Could not copy client to this directory.`);
+      } else {
+        fs.copySync(this.clientDir, path);
+      }
     });
   };
 
