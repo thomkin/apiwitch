@@ -14,6 +14,8 @@ export enum CoreErrorCodes {
   //client codes
   ConnectionRefused = 1500,
   NoTokenFound = 1501,
+  FetchTimeout = 1502,
+  UrlNotFound = 1503,
 }
 
 export enum HttpErrorCode {

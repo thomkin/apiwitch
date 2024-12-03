@@ -38,6 +38,11 @@ export const initRpcClient = (config: ClientConfig) => {
   });
 };
 
+const httpErrCodeMap: { [key: string]: number } = {
+  404: CoreErrorCodes.UrlNotFound,
+  408: CoreErrorCodes.FetchTimeout,
+};
+
 interface KyRpcT<Params> {
   endpoint: string;
   authDomain: string;
@@ -75,8 +80,8 @@ export const kyRpc = async <params, resp>(data: KyRpcT<params>): Promise<KyRetur
   if (error) {
     return {
       error: {
-        code: error.errno,
-        message: `${error.code} --> ${error.path}`,
+        code: httpErrCodeMap[(error as any).response.status],
+        message: `${(error as any).response.statusText} --> ${(error as any).response.url}`,
       },
     } as KyReturn<resp>;
   }
