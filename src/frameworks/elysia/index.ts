@@ -86,6 +86,7 @@ const routeHandlerWrapper = async (
     error: context.error,
     redirect: context.redirect,
     cookie: context.cookie,
+    ip: context.server?.requestIP(context.request),
     meta: { ...context.store },
   });
 };

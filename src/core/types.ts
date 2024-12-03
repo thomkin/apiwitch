@@ -1,5 +1,6 @@
 import Elysia, { Context, Cookie } from 'elysia';
 import { HttpErrorMsg } from './error';
+import { SocketAddress } from 'bun';
 
 export enum FrameworkId {
   'elysia' = 'elysia',
@@ -99,6 +100,7 @@ export type MethodHandler = {
     redirect?: (url: string, status: 301 | 302 | 303 | 307 | 308 | undefined) => void;
     cookie?: Record<string, Cookie<string | undefined>>;
     meta: { [key: string]: any };
+    ip: SocketAddress | undefined | null;
   }) => Promise<any | RpcReturn<any>>;
 };
 
