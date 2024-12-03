@@ -289,3 +289,26 @@ I need to tell:
 
 - [] in the rpc client instead of parsing the config store as a parameter als have a function updateOrCreate
   and delte to update/create or delete an alement in the token store
+
+- In this ts snippe the assignment of an object to a spefici input here query does not seem to work
+  it still ends up in best effort
+
+```ts
+type Request = {
+  /**
+   * formData:: @query TODO:
+   */
+  formData: {
+    email: string;
+    name: string;
+    region: string;
+    city: string;
+    feedback: string;
+    deviceInfo: {
+      os: string;
+      browser: string;
+      userAgent: string;
+    };
+  };
+};
+```

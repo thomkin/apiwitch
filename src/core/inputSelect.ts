@@ -51,11 +51,8 @@ export const handleBestEffort = (input: {
 
 const constructData = (data: any, selectObj: string[], output: { [key: string]: any }) => {
   selectObj?.forEach((selecTKey) => {
-    const crushedBody = crush(data) as { [key: string]: any };
-    const value = crushedBody[selecTKey];
-
     if (!(selecTKey in output)) {
-      output[selecTKey] = value;
+      output[selecTKey] = data[selecTKey];
     }
   });
 };
