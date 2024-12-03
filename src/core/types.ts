@@ -147,6 +147,7 @@ export type ApiWitchRouteInput<req> = {
   error: (code: number, message: string) => any;
   redirect: (url: string, status: 301 | 302 | 303 | 307 | 308 | undefined) => any;
   meta: { [key: string]: any };
+  ip: SocketAddress | undefined | null;
 };
 
 export type ApiWitchRouteHandler = (input: ApiWitchRouteInput<any>) => Promise<any>;
