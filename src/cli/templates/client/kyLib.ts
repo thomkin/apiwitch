@@ -69,7 +69,7 @@ export const kyRpc = async <params, resp>(data: KyRpcT<params>): Promise<KyRetur
     params: data.params,
   };
 
-  const [error, response] = await catchError(
+  const [error, response] = await catchError<any>(
     kyRpcClient
       .post('rpc', {
         json: request,
@@ -80,13 +80,13 @@ export const kyRpc = async <params, resp>(data: KyRpcT<params>): Promise<KyRetur
   if (error) {
     return {
       error: {
-        code: httpErrCodeMap[(error as any).response.status],
-        message: `${(error as any).response.statusText} --> ${(error as any).response.url}`,
+        code: httpErrCodeMap[(error as any)?.response?.status],
+        message: `${(error as any)?.response?.statusText} --> ${(error as any)?.response?.url}`,
       },
     } as KyReturn<resp>;
   }
 
-  if (response.error) {
+  if (response?.error) {
     return {
       error: {
         code: response.error.appCode,
