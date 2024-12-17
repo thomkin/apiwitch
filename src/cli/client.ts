@@ -122,11 +122,22 @@ export class RpcClientGenerator {
 
       //create handler file
       const mustacheHandlerTempl = this.readMustacheTemplate('handler.mustache');
+
+      const reqHasExport = src.getTypeAlias('Request')?.getText().includes('export ');
+      const resHasExport = src.getTypeAlias('Response')?.getText().includes('export ');
+
       const handlerData: MustacheHandleData = {
         authDomain: route.meta.auth as string,
         endpoint: route.meta.endpoint,
-        request: `export ${src.getTypeAlias('Request')?.getText()}`,
-        response: `export ${src.getTypeAlias('Response')?.getText()}`,
+
+        request: reqHasExport
+          ? `${src.getTypeAlias('Request')?.getText()}`
+          : `export ${src.getTypeAlias('Request')?.getText()}`,
+
+        response: resHasExport
+          ? `${src.getTypeAlias('Response')?.getText()}`
+          : `export ${src.getTypeAlias('Response')?.getText()}`,
+
         requestName: 'Request',
         responseName: 'Response',
       };
