@@ -1,13 +1,15 @@
 import { CoreErrorCodes, HttpErrorCode, HttpErrorMsg } from './error';
+
 import * as v from 'valibot';
 
 export const minifyValibotError = (issues: Array<any>) => {
+  console.log('issues', issues);
   const minifiedData = issues.map((issue) => {
     return { message: issue.message, key: issue.path[0].key };
   });
 
-  return minifiedData;
-  // return JSON.stringify(minifiedData, null, 2);
+  // return minifiedData;
+  return JSON.stringify(minifiedData, null, 2);
 };
 
 export const routeRequestValidation = (input: {

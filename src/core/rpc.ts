@@ -1,10 +1,10 @@
 import { MethodHandler, PermissionCheck, RpcResponse, RpcReturn, RpcRouteRequest } from './types';
 import { minifyValibotError } from './validation';
-import { getAuthHandler } from './auth';
+import { ErrorCode, logger } from './logger';
 import { CoreErrorCodes } from './error';
+import { getAuthHandler } from './auth';
 
 import * as v from 'valibot';
-import { ErrorCode, logger } from './logger';
 
 //Handle the RPC mechanism using JSON RPC protocol
 
@@ -103,6 +103,7 @@ export const rpcHandler = async (input: RpcRouteRequest): Promise<any> => {
     error: input.error,
     meta: meta as { [key: string]: any },
     request: valibot.output,
+    ip: undefined,
   })) as RpcReturn<any>;
 
   const response: RpcResponse<any> = {
