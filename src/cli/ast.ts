@@ -99,10 +99,19 @@ export class AstParser {
           break;
 
         case SyntaxKind.ArrayType:
+          // Handle both Array<Type> and Type[] syntax
           const arrayType = child.getFirstChildByKind(SyntaxKind.TypeLiteral);
-          const at = this.parseTypeLiteral(arrayType as TypeLiteralNode, finalName, true);
+          const elementType =
+            arrayType ||
+            child.getFirstChildByKind(SyntaxKind.StringKeyword) ||
+            child.getFirstChildByKind(SyntaxKind.NumberKeyword) ||
+            child.getFirstChildByKind(SyntaxKind.BooleanKeyword) ||
+            child.getFirstChildByKind(SyntaxKind.AnyKeyword);
 
-          propertyMap = { ...propertyMap, ...at };
+          if (elementType) {
+            const at = this.parseTypeLiteral(elementType as TypeLiteralNode, finalName, true);
+            propertyMap = { ...propertyMap, ...at };
+          }
           break;
 
         default:
