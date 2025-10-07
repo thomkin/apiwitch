@@ -1,8 +1,7 @@
 import { logger, ErrorCode } from './logger';
+import { cwd, permission } from 'process';
 import { cliConfig } from './index';
 import { AstParser } from './ast';
-import { cwd, permission } from 'process';
-import path from 'path';
 
 import {
   ApiWitchRouteExport,
@@ -12,7 +11,6 @@ import {
   TransformResult,
   TypeConfig,
 } from './types';
-
 import {
   Project,
   SourceFile,
@@ -21,6 +19,8 @@ import {
   SyntaxKind,
   VariableDeclaration,
 } from 'ts-morph';
+
+import path from 'path';
 
 const processTypeOrInterface = (
   typeDeclaration: TypeAliasDeclaration | InterfaceDeclaration | undefined,

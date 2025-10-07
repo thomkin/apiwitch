@@ -67,8 +67,14 @@ export class ValibotValidator {
     this.keyChain.pop();
   };
 
-  private propListItemToValibotString = (obj: SchemaItem) => {
-    let output = `${obj.isOptional ? 'v.optional(' : ''}v.${obj.type}()${obj.isOptional ? ')' : ''}`;
+  private propListItemToValibotString = (obj: SchemaItem, isArray: boolean) => {
+    let output = `${obj.isOptional ? 'v.optional(' : ''}`;
+    if (isArray) {
+      output += `v.array(v.${obj.type}())`;
+    } else {
+      output += `v.${obj.type}()`;
+    }
+    output += `${obj.isOptional ? ')' : ''}`;
     return output;
   };
 
@@ -98,7 +104,7 @@ export class ValibotValidator {
     indentName: string,
   ): { last: boolean; obj: string | undefined } => {
     const valibotList: any = {};
-    let isArray: boolean = false;
+    let isArray: boolean = data.isArray || false;
 
     for (let i = 0; i < Object?.keys(data)?.length; i++) {
       const key = Object.keys(data)[i];
@@ -111,10 +117,11 @@ export class ValibotValidator {
           //are we ever going in here? return obj is always undefined?
           valibotList[key] = ret.obj;
         } else if (ret.last) {
-          if (data[key].isArray) {
+          if (data[key].parentIsArray) {
             isArray = true;
           }
-          valibotList[key] = this.propListItemToValibotString(data[key]);
+
+          valibotList[key] = this.propListItemToValibotString(data[key], data[key].isArray);
         }
       } else {
         //we reached a native type so we can start processing but we have to go one iteration backwards

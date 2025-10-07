@@ -3,6 +3,7 @@ export type SchemaItem = {
   type: string;
   isArray: boolean;
   isOptional?: boolean;
+  parentIsArray?: boolean;
 
   ignore?: boolean;
 };

@@ -1,12 +1,12 @@
-import { expect, test } from 'bun:test';
-import { AstParser } from '../src/cli/ast';
 import { Project, SyntaxKind } from 'ts-morph';
-import path from 'path';
-import { cwd } from 'process';
+import { AstParser } from '../src/cli/ast';
 import { Schema } from '../src/cli/types';
+import { expect, test } from 'bun:test';
+import { cwd } from 'process';
+
+import path from 'path';
 
 const validateSimple = (schema: Schema) => {
-  //   console.log(schema);
   expect(schema['request.isValid']).toBeTruthy();
   expect(schema['request.isValid'].isOptional).toBeFalse();
   expect(schema['request.isValid'].identifier).toBe('isValid');

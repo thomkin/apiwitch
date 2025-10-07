@@ -55,11 +55,15 @@ export class AstParser {
 
     const finalName = `${parentName}.${idf.getText()}`;
 
+    const arrayType = signature.getFirstChildByKind(SyntaxKind.ArrayType);
+    const _isArray = !!arrayType;
+
     propertyMap[finalName] = {
       isOptional: false,
       type: 'undefined',
       identifier: 'undefined',
-      isArray: isArray,
+      isArray: _isArray,
+      parentIsArray: isArray,
     };
 
     propertyMap[finalName].identifier = idf.getText();
@@ -100,17 +104,14 @@ export class AstParser {
 
         case SyntaxKind.ArrayType:
           // Handle both Array<Type> and Type[] syntax
-          const arrayType = child.getFirstChildByKind(SyntaxKind.TypeLiteral);
-          const elementType =
-            arrayType ||
-            child.getFirstChildByKind(SyntaxKind.StringKeyword) ||
-            child.getFirstChildByKind(SyntaxKind.NumberKeyword) ||
-            child.getFirstChildByKind(SyntaxKind.BooleanKeyword) ||
-            child.getFirstChildByKind(SyntaxKind.AnyKeyword);
-
+          const elementType = child.getFirstChildByKind(SyntaxKind.TypeLiteral);
           if (elementType) {
             const at = this.parseTypeLiteral(elementType as TypeLiteralNode, finalName, true);
             propertyMap = { ...propertyMap, ...at };
+          } else {
+            //it is a native type array
+            propertyMap[finalName].type = child.getText().replace('[]', '');
+            propertyMap[finalName].isArray = true;
           }
           break;
 

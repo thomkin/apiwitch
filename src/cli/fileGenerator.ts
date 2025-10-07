@@ -1,6 +1,6 @@
 import { AutoGenMethodData } from '../types';
-import { cliConfig } from '.';
 import { logger } from './logger';
+import { cliConfig } from '.';
 
 import Mustache from 'mustache';
 import prettier from 'prettier';

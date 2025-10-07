@@ -2,12 +2,10 @@ import { handleCommentInputSelect as handlePropsInputSelect } from '../../core/i
 import { routeRequestValidation } from '../../core/validation';
 import { getAuthHandler } from '../../core/auth';
 import { HttpErrorCode } from '../../core/error';
+import { logger } from '../../core/logger';
 import { Context, Elysia } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { clone } from 'radash';
-import { logger } from '../../core/logger';
-
-import swagger from '@elysiajs/swagger';
 
 import {
   ApiwitchConfig,
@@ -20,13 +18,14 @@ import {
   AuthReturn,
 } from '../../types';
 
+import swagger from '@elysiajs/swagger';
+
 // let _app: Elysia;
 
 const init = (config: ApiwitchConfig): Elysia => {
   let appCfg: any = {};
 
   if (config.sslConfig) {
-    console.log('running with ssl');
     appCfg = {
       serve: {
         tls: {
