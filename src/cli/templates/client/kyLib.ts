@@ -1,3 +1,5 @@
+import { catchError } from './utils';
+
 import {
   AuthType,
   ClientConfig,
@@ -7,10 +9,9 @@ import {
   CoreErrorCodes,
   AuthCredentials,
 } from './types';
-import ky, { KyInstance } from 'ky';
-import { catchError } from './utils';
 
-let kyRpcClient: KyInstance;
+// 2. Change: kyRpcClient must be initialized as null/undefined and then awaited.
+let kyRpcClient: KyInstance | undefined;
 
 const tokenStore: { [key: string]: string } = {};
 
@@ -21,26 +22,47 @@ export const deleteTokenFromStore = (key: string) => {
 export const updateOrCreateToken = (key: string, cred: AuthCredentials) => {
   if (cred.authType === AuthType.basic) {
     // token = Buffer.from(token).toString('base64');
-    cred.token = btoa(cred.token);
+    // NOTE: btoa is a browser/renderer function. If this code is running in
+    // the Electron main process, you must use Node's Buffer.
+    if (typeof btoa === 'function') {
+      cred.token = btoa(cred.token);
+    } else {
+      // Fallback for Node.js environment (Main Process)
+      cred.token = Buffer.from(cred.token).toString('base64');
+    }
+
     tokenStore[key] = `Basic ${cred.token}`;
   } else if (cred.authType === AuthType.bearer) {
     tokenStore[key] = `Bearer ${cred.token}`;
   }
 };
 
-export const initRpcClient = (config: ClientConfig) => {
+// -------------------------------------------------------------------------
+// 3. Change: initRpcClient must be an async function to use dynamic import.
+export const initRpcClient = async (config: ClientConfig) => {
+  // Use dynamic import for the runtime value
+  const kyModule = await import('ky');
+  const ky = kyModule.default; // ky is the default export
+
   Object.entries(config.authCredentials).forEach(([key, cred]) => {
     updateOrCreateToken(key, cred);
   });
 
+  if (config.baseUrl.includes('https://localhost')) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  }
+
+  // Now initialize the client after dynamically loading ky
   kyRpcClient = ky.create({
     prefixUrl: config.baseUrl,
   });
 };
+// -------------------------------------------------------------------------
 
 const httpErrCodeMap: { [key: string]: number } = {
   404: CoreErrorCodes.UrlNotFound,
   408: CoreErrorCodes.FetchTimeout,
+  UNABLE_TO_VERIFY_LEAF_SIGNATURE: CoreErrorCodes.UnableToVerifySignature,
 };
 
 interface KyRpcT<Params> {
@@ -50,6 +72,16 @@ interface KyRpcT<Params> {
 }
 
 export const kyRpc = async <params, resp>(data: KyRpcT<params>): Promise<KyReturn<resp>> => {
+  if (!kyRpcClient) {
+    // Handle case where client hasn't been initialized (or init failed)
+    return {
+      error: {
+        code: CoreErrorCodes.ClientNotInitialized || 9999,
+        message: 'RPC client has not been initialized. Call initRpcClient first.',
+      },
+    } as KyReturn<resp>;
+  }
+
   const token = tokenStore[data.authDomain];
   if (!token) {
     const noTokenFound: KyReturn<resp> = {
@@ -69,6 +101,8 @@ export const kyRpc = async <params, resp>(data: KyRpcT<params>): Promise<KyRetur
     params: data.params,
   };
 
+  console.log('request: ', request);
+
   const [error, response] = await catchError<any>(
     kyRpcClient
       .post('rpc', {
@@ -78,12 +112,22 @@ export const kyRpc = async <params, resp>(data: KyRpcT<params>): Promise<KyRetur
   );
 
   if (error) {
-    return {
-      error: {
-        code: httpErrCodeMap[(error as any)?.response?.status],
-        message: `${(error as any)?.response?.statusText} --> ${(error as any)?.response?.url}`,
-      },
-    } as KyReturn<resp>;
+    if ((error as any)?.response?.status) {
+      return {
+        error: {
+          code: httpErrCodeMap[(error as any)?.code],
+          message: `Ky error: ${error}`,
+        },
+      } as KyReturn<resp>;
+    } else {
+      console.error(error);
+      return {
+        error: {
+          code: CoreErrorCodes.KyError,
+          message: 'Unhandled Ky error',
+        },
+      } as KyReturn<resp>;
+    }
   }
 
   if (response?.error) {
