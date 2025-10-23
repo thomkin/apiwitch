@@ -48,7 +48,7 @@ export const initRpcClient = async (config: ClientConfig) => {
     updateOrCreateToken(key, cred);
   });
 
-  if (config.baseUrl.includes('https://localhost')) {
+  if (config.baseUrl.includes('https://localhost') && process) {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
   }
 
