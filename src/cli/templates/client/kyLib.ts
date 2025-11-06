@@ -101,8 +101,6 @@ export const kyRpc = async <params, resp>(data: KyRpcT<params>): Promise<KyRetur
     params: data.params,
   };
 
-  console.log('request: ', request);
-
   const [error, response] = await catchError<any>(
     kyRpcClient
       .post('rpc', {
