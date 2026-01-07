@@ -16,6 +16,7 @@ export const routeRequestValidation = (input: {
   uuid: string;
   request: any;
   context: any;
+  errorHandler: (code: HttpErrorCode, message: HttpErrorMsg | undefined) => void;
 }): { error: any; data: any } => {
   //Then validate the inputs
   const requestSchema = input.witchcraftSchemas[input.uuid + '_valibot_request'];
@@ -29,7 +30,7 @@ export const routeRequestValidation = (input: {
   }
 
   return {
-    error: input.context.error(HttpErrorCode.BadRequest, {
+    error: input.errorHandler(HttpErrorCode.BadRequest, {
       message: minifyValibotError(valibot.issues),
       code: CoreErrorCodes.ValidationFailed,
     } as HttpErrorMsg),

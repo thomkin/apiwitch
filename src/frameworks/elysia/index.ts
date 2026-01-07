@@ -1,10 +1,14 @@
 import { handleCommentInputSelect as handlePropsInputSelect } from '../../core/inputSelect';
 import { routeRequestValidation } from '../../core/validation';
 import { getAuthHandler } from '../../core/auth';
-import { HttpErrorCode } from '../../core/error';
+import { HttpErrorCode, HttpErrorMsg } from '../../core/error';
 import { logger } from '../../core/logger';
-import { Context, Elysia } from 'elysia';
-import { cors } from '@elysiajs/cors';
+import { Context, Cookie, Elysia } from 'elysia';
+import { cors } from '@elysiajs/cors'; /**
+
+   * request_url:: @query
+
+   */
 import { clone } from 'radash';
 
 import {
@@ -19,6 +23,7 @@ import {
 } from '../../types';
 
 import swagger from '@elysiajs/swagger';
+import { number } from 'valibot';
 
 // let _app: Elysia;
 
@@ -55,6 +60,19 @@ const init = (config: ApiwitchConfig): Elysia => {
   return app;
 };
 
+const errorHandler = (code: HttpErrorCode, message: HttpErrorMsg | undefined) => {
+  class MyError extends Error {
+    constructor(
+      public message: string,
+      public status: number,
+    ) {
+      super(message);
+    }
+  }
+
+  throw new MyError(`Error ${code}: ${JSON.stringify(message)}`, code);
+};
+
 const routeHandlerWrapper = async (
   context: Context,
   handler: MethodHandler,
@@ -74,6 +92,7 @@ const routeHandlerWrapper = async (
     request: handlerReq,
     uuid: handler.uuid,
     witchcraftSchemas: witchcraftSchemas,
+    errorHandler,
   });
 
   if (valid.error) {
@@ -82,11 +101,18 @@ const routeHandlerWrapper = async (
 
   return await handler.callback({
     request: clone(valid.data),
-    error: context.error,
+    // error: context.error,
+    error: (code: HttpErrorCode, message: string) => errorHandler(code, { message, code }),
     redirect: context.redirect,
-    cookie: context.cookie,
+    cookie: context.cookie as Record<string, Cookie<string | undefined>>, // Add type assertion
     ip: context.server?.requestIP(context.request),
     meta: { ...context.store },
+    path: context.path,
+    raw: {
+      query: context.query,
+      params: context.params,
+      headers: context.headers,
+    },
   });
 };
 
@@ -102,12 +128,12 @@ const addRoute = (
     try {
       authRet = await getAuthHandler(handler.auth)?.(context?.headers?.authorization);
       if (!authRet || authRet?.error) {
-        return context.error(HttpErrorCode.Unauthorized, authRet?.error);
+        return errorHandler(HttpErrorCode.Unauthorized, authRet?.error);
       } else if (authRet.meta) {
         context.store = authRet.meta || {};
       }
     } catch (error) {
-      return context.error(HttpErrorCode.InternalServerError, {
+      return errorHandler(HttpErrorCode.InternalServerError, {
         message: 'An unexpected error occurred when executing the auth handler',
         code: HttpErrorCode.InternalServerError,
       });
@@ -116,7 +142,7 @@ const addRoute = (
     //handle user specific permission check.
     if (permissionCheck) {
       if (!permissionCheck(authRet?.meta?.['userId'], handler.permission)) {
-        return context.error(HttpErrorCode.Forbidden, {
+        return errorHandler(HttpErrorCode.Forbidden, {
           message: 'User permission check failed',
           code: HttpErrorCode.Forbidden,
         });
@@ -129,13 +155,17 @@ const addRoute = (
 
     switch (handler.method) {
       case ApiMethods.get:
-        app.get(
-          handler.endpoint,
-          async (context) => {
-            return routeHandlerWrapper(context, handler, witchcraftSchemas);
-          },
-          { beforeHandle },
-        );
+        app
+          .get(
+            handler.endpoint,
+            async (context) => {
+              return routeHandlerWrapper(context, handler, witchcraftSchemas);
+            },
+            { beforeHandle },
+          )
+          .onError(({ code, error, status }) => {
+            console.log('Error', error);
+          });
         break;
 
       case ApiMethods.post:
@@ -192,7 +222,7 @@ const rpcRoute = async (
         params: body.params,
         id: body.id,
       },
-      error: context.error,
+      error: (code: number, message: string) => errorHandler(code, { message, code }),
       witchcraftSchemas,
       permissionCheck,
     });

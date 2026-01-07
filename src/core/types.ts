@@ -101,6 +101,12 @@ export type MethodHandler = {
     cookie?: Record<string, Cookie<string | undefined>>;
     meta: { [key: string]: any };
     ip: SocketAddress | undefined | null;
+    path: string;
+    raw: {
+      query: Record<string, string | undefined> | undefined;
+      params: Record<string, string | undefined> | undefined;
+      headers: Record<string, string | undefined> | undefined;
+    };
   }) => Promise<any | RpcReturn<any>>;
 };
 
@@ -148,6 +154,12 @@ export type ApiWitchRouteInput<req> = {
   redirect: (url: string, status: 301 | 302 | 303 | 307 | 308 | undefined) => any;
   meta: { [key: string]: any };
   ip: SocketAddress | undefined | null;
+  path: string;
+  raw: {
+    query: Record<string, string | undefined> | undefined;
+    params: Record<string, string | undefined> | undefined;
+    headers: Record<string, string | undefined> | undefined;
+  };
 };
 
 export type ApiWitchRouteHandler = (input: ApiWitchRouteInput<any>) => Promise<any>;
