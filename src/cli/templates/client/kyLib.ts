@@ -1,3 +1,4 @@
+import { type KyInstance } from 'ky';
 import { catchError } from './utils';
 
 import {

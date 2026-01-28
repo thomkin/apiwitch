@@ -4,6 +4,8 @@ export enum CoreErrorCodes {
   ValidationFailed = 1002,
   AuthenticationFailed = 1003,
   PermissionCheckFailed = 1004,
+  UnableToVerifySignature = 1005,
+  KyError = 1006,
 
   //RPC Related codes
   RpcPacketMalformed = 1100,
@@ -16,6 +18,7 @@ export enum CoreErrorCodes {
   NoTokenFound = 1501,
   FetchTimeout = 1502,
   UrlNotFound = 1503,
+  ClientNotInitialized = 1504,
 }
 
 export enum HttpErrorCode {
